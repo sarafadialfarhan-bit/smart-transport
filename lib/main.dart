@@ -78,7 +78,7 @@ class LogInScreen extends StatelessWidget {
                       blurRadius: 2,
                     ),
                   ],
-                  gradient:kDarkGradient,
+                  gradient: kDarkGradient,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -107,18 +107,41 @@ class LogInScreen extends StatelessWidget {
               padding: const EdgeInsets.all(8.0),
               child: Center(
                 child: Column(
-                              mainAxisSize: MainAxisSize.min,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text("Log In", style:  TextStyle(color: kMainColor,fontSize: 40),),
-                    SizedBox(height: 16,),
-                    CustomTextFormField(title: "Email",),
-                    SizedBox(height: 8,),
-                    CustomTextFormField(title: "Password",),
-                    SizedBox(height: 8,),
+                    Text(
+                      "Log In",
+                      style: TextStyle(color: kMainColor, fontSize: 40),
+                    ),
+                    SizedBox(height: 16),
+                    CustomTextFormField(title: "Email"),
+                    SizedBox(height: 8),
+                    CustomTextFormField(title: "Password"),
+                    SizedBox(height: 8),
+                    Container(
+                      width: 200,
+                      decoration: BoxDecoration(
+                          
+                          borderRadius: BorderRadius.circular(60),
+                          gradient: kLightGradient),
+                      child: MaterialButton(
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(60),
+                        ),
+                        height: 65,
+                          onPressed: () {},
+                          child:
+                       Text(
+                        "Log In",
+                        style: TextStyle(fontSize: 28.0, color: Colors.white),
+                      ),
+                    ),
+                    ),
+
                   ],
                 ),
               ),
-            )
+            ),
           ],
         ),
       ),
