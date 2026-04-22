@@ -1,6 +1,7 @@
 import 'package:chat_app/constants.dart';
 import 'package:flutter/material.dart';
 
+import 'custom_button.dart';
 import 'custom_text_form_field.dart';
 
 void main() {
@@ -118,25 +119,7 @@ class LogInScreen extends StatelessWidget {
                     SizedBox(height: 8),
                     CustomTextFormField(title: "Password"),
                     SizedBox(height: 8),
-                    Container(
-                      width: 200,
-                      decoration: BoxDecoration(
-                          
-                          borderRadius: BorderRadius.circular(60),
-                          gradient: kLightGradient),
-                      child: MaterialButton(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(60),
-                        ),
-                        height: 65,
-                          onPressed: () {},
-                          child:
-                       Text(
-                        "Log In",
-                        style: TextStyle(fontSize: 28.0, color: Colors.white),
-                      ),
-                    ),
-                    ),
+                    CustomButton(),
 
                   ],
                 ),
@@ -148,3 +131,4 @@ class LogInScreen extends StatelessWidget {
     );
   }
 }
+
