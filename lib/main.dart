@@ -1,18 +1,39 @@
-import 'package:chat_app/constants.dart';
-import 'package:chat_app/components/custom_button.dart';
-import 'package:chat_app/screens/welcome_screen.dart';
 import 'package:flutter/material.dart';
-import 'components/background_decoration.dart';
+import 'package:easy_localization/easy_localization.dart';
+import 'screens/welcome_screen.dart';
 
-void main() {
-  runApp(const MyApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await EasyLocalization.ensureInitialized();
+
+  runApp(
+    EasyLocalization(
+      supportedLocales: const [Locale('ar'), Locale('en')],
+      path: 'assets/translations',
+      fallbackLocale: const Locale('ar'),
+      startLocale: const Locale('ar'),
+      child: const SmartTransportApp(),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class SmartTransportApp extends StatelessWidget {
+  const SmartTransportApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(home: WelcomeScreen());
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      localizationsDelegates: context.localizationDelegates,
+      supportedLocales: context.supportedLocales,
+      locale: context.locale,
+      title: 'app_title'.tr(),
+      theme: ThemeData(
+        fontFamily: 'Cairo',
+        primarySwatch: Colors.blueGrey,
+        useMaterial3: true,
+      ),
+      home: const WelcomeScreen(),
+    );
   }
 }

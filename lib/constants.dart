@@ -1,22 +1,25 @@
 import 'package:flutter/material.dart';
 
-Color kMainColor = Colors.yellow;
+// الألوان الأساسية لتطبيق النقل
+const kPrimaryColor = Color(0xFF455A64);
+const kSecondaryColor = Color(0xFF263238);
+const kBackgroundColor = Color(0xFFF5F5F5);
+const kWhiteColor = Colors.white;
+const kGreyColor = Colors.grey;
+const kGreenColor = Colors.green;
 
-Color kLightColor1 = Colors.yellow.shade300;
-Color kLightColor2 = Colors.yellow.shade500;
+// ألوان متوافقة مع واجهات الدخول القديمة لمنع الأخطاء
+const kMainColor = kPrimaryColor;
+const kDarkColor2 = kSecondaryColor;
 
-Color kDarkColor1 = Colors.yellow.shade700;
-Color kDarkColor2 = Colors.yellow.shade900;
-
-LinearGradient kLightGradient = LinearGradient(
-  colors: [kLightColor2, kLightColor1],
-  begin: AlignmentGeometry.topCenter,
-  end: AlignmentGeometry.bottomCenter,
+const kLightGradient = LinearGradient(
+  colors: [Color(0xFF607D8B), Color(0xFF455A64)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
 );
 
-LinearGradient kDarkGradient = LinearGradient(
-  colors: [kDarkColor2,kDarkColor1],
-  begin: AlignmentGeometry.topCenter,
-  end: AlignmentGeometry.bottomCenter,
+const kDarkGradient = LinearGradient(
+  colors: [Color(0xFF263238), Color(0xFF37474F)],
+  begin: Alignment.topLeft,
+  end: Alignment.bottomRight,
 );
-

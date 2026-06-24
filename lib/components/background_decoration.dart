@@ -3,9 +3,7 @@ import '../constants.dart';
 
 class BackgroundDecoration extends StatelessWidget {
   final Widget child;
-  const BackgroundDecoration({
-    super.key, required this.child,
-  });
+  const BackgroundDecoration({super.key, required this.child});
 
   @override
   Widget build(BuildContext context) {
@@ -34,20 +32,23 @@ class BackgroundDecoration extends StatelessWidget {
               ),
             ),
           ),
-          Container(
-            height: MediaQuery.of(context).size.width * 0.75,
-            width: MediaQuery.of(context).size.width * 0.75,
-            decoration: BoxDecoration(
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black45,
-                  spreadRadius: 5,
-                  blurRadius: 5,
+          Positioned(
+            left: 0,
+            child: Container(
+              height: MediaQuery.of(context).size.width * 0.75,
+              width: MediaQuery.of(context).size.width * 0.75,
+              decoration: BoxDecoration(
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black45,
+                    spreadRadius: 5,
+                    blurRadius: 5,
+                  ),
+                ],
+                gradient: kLightGradient,
+                borderRadius: BorderRadius.only(
+                  bottomRight: Radius.circular(360),
                 ),
-              ],
-              gradient: kLightGradient,
-              borderRadius: BorderRadius.only(
-                bottomRight: Radius.circular(360),
               ),
             ),
           ),
@@ -92,9 +93,7 @@ class BackgroundDecoration extends StatelessWidget {
 
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: Center(
-              child: child,
-            ),
+            child: Center(child: child),
           ),
         ],
       ),
