@@ -4,13 +4,67 @@ import '../constants.dart';
 import '../components/custom_button.dart';
 import '../components/custom_text_form_field.dart';
 import '../components/background_decoration.dart';
+import '../services/auth_service.dart';
 import 'forget_password_screen.dart';
 import 'sign_up_screen.dart';
 
-class LogInScreen extends StatelessWidget {
+class LogInScreen extends StatefulWidget {
   const LogInScreen({
     super.key,
   });
+
+  @override
+  State<LogInScreen> createState() => _LogInScreenState();
+}
+
+class _LogInScreenState extends State<LogInScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
+  bool _isLoading = false;
+
+  void _login() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    String? error = await _authService.signIn(
+      _emailController.text.trim(),
+      _passwordController.text.trim(),
+    );
+
+    setState(() {
+      _isLoading = false;
+    });
+
+    if (error == null) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("login_success".tr()),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.pop(context);
+      }
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -48,19 +102,19 @@ class LogInScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 40),
-
                 CustomTextFormField(
+                  controller: _emailController,
                   title: "email".tr(),
                   icon: Icons.email_outlined,
                   keyboardType: TextInputType.emailAddress,
                 ),
                 const SizedBox(height: 15),
                 CustomTextFormField(
+                  controller: _passwordController,
                   title: "password".tr(),
                   isPassword: true,
                   icon: Icons.lock_outline,
                 ),
-
                 Align(
                   alignment: Alignment.centerLeft,
                   child: TextButton(
@@ -81,21 +135,17 @@ class LogInScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 25),
-
                 Hero(
                   tag: 'logIn',
-                  child: CustomButton(
-                    title: "login".tr(),
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                  ),
+                  child: _isLoading
+                      ? const CircularProgressIndicator(color: kWhiteColor)
+                      : CustomButton(
+                          title: "login".tr(),
+                          onPressed: _login,
+                        ),
                 ),
-
                 const SizedBox(height: 30),
-
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [

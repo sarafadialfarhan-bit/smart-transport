@@ -204,5 +204,19 @@
   "notification_time_hour_ago": "منذ ساعة",
   "notification_time_yesterday": "أمس",
   "notification_time_two_days_ago": "قبل يومين",
-  "no_notifications": "لا توجد تنبيهات حالياً"
+  "no_notifications": "لا توجد تنبيهات حالياً",
+  "auth_error_email_already_in_use": "هذا البريد الإلكتروني مستخدم بالفعل.",
+  "auth_error_weak_password": "كلمة المرور ضعيفة جداً.",
+  "auth_error_user_not_found": "لم يتم العثور على مستخدم بهذا البريد الإلكتروني.",
+  "auth_error_wrong_password": "كلمة المرور غير صحيحة.",
+  "auth_error_invalid_email": "البريد الإلكتروني غير صحيح.",
+  "auth_error_invalid_credential": "معلومات تسجيل الدخول غير صحيحة.",
+  "auth_error_user_disabled": "تم تعطيل هذا الحساب.",
+  "auth_error_too_many_requests": "محاولات كثيرة جداً. حاول لاحقاً.",
+  "auth_error_operation_not_allowed": "العملية غير مسموح بها.",
+  "auth_error_generic": "خطأ في المصادقة: {}",
+  "unexpected_error": "حدث خطأ غير متوقع: {}",
+  "login_success": "تم تسجيل الدخول بنجاح!",
+  "signup_success": "تم إنشاء الحساب بنجاح!",
+  "auth_error_password_mismatch": "كلمتا المرور غير متطابقتين."
 }

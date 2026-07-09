@@ -1,4 +1,4 @@
-# chat_app
+# smart_transport
 
 A new Flutter project.
 

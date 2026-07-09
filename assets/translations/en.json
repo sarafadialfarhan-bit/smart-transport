@@ -204,5 +204,19 @@
   "notification_time_hour_ago": "An hour ago",
   "notification_time_yesterday": "Yesterday",
   "notification_time_two_days_ago": "2 days ago",
-  "no_notifications": "No notifications at the moment"
+  "no_notifications": "No notifications at the moment",
+  "auth_error_email_already_in_use": "This email is already in use.",
+  "auth_error_weak_password": "The password is too weak.",
+  "auth_error_user_not_found": "No user found with this email.",
+  "auth_error_wrong_password": "Incorrect password.",
+  "auth_error_invalid_email": "The email address is invalid.",
+  "auth_error_invalid_credential": "Invalid login credentials.",
+  "auth_error_user_disabled": "This user account has been disabled.",
+  "auth_error_too_many_requests": "Too many requests. Try again later.",
+  "auth_error_operation_not_allowed": "Operation not allowed.",
+  "auth_error_generic": "Authentication error: {}",
+  "unexpected_error": "An unexpected error occurred: {}",
+  "login_success": "Logged in successfully!",
+  "signup_success": "Account created successfully!",
+  "auth_error_password_mismatch": "Passwords do not match."
 }
