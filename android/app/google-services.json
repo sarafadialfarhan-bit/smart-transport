@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "356668270420",
+    "project_id": "smart-transport-f8a33",
+    "storage_bucket": "smart-transport-f8a33.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:356668270420:android:66bd3b281106e1aa0a8ac1",
+        "android_client_info": {
+          "package_name": "com.example.chat_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDQkdsPEoI9f1mqwE__VJAar10RnWgL5go"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
