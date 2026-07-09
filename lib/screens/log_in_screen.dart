@@ -99,12 +99,11 @@ class _LogInScreenState extends State<LogInScreen> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const Hero(
+                Hero(
                   tag: 'logo',
-                  child: Icon(
-                    Icons.account_circle,
-                    size: 90,
-                    color: kWhiteColor,
+                  child: Image.asset(
+                    'assets/images/icon.png',
+                    height: 100,
                   ),
                 ),
                 const SizedBox(height: 10),
@@ -161,12 +160,11 @@ class _LogInScreenState extends State<LogInScreen> {
                 const SizedBox(height: 25),
                 Hero(
                   tag: 'logIn',
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: kWhiteColor)
-                      : CustomButton(
-                          title: "login".tr(),
-                          onPressed: _login,
-                        ),
+                  child: CustomButton(
+                    title: "login".tr(),
+                    onPressed: _login,
+                    isLoading: _isLoading,
+                  ),
                 ),
                 const SizedBox(height: 30),
                 Row(

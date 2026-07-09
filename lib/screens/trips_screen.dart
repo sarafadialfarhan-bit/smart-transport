@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../constants.dart';
 import 'passenger_data_screen.dart';
 import 'log_in_screen.dart';
+import '../components/skeleton.dart';
 
 class Trip {
   final String id;
@@ -76,11 +77,16 @@ class _TripsScreenState extends State<TripsScreen> {
                   .collection('trips')
                   .where('from', isEqualTo: widget.fromCity)
                   .where('to', isEqualTo: widget.toCity)
+                  .where('status', isEqualTo: 'active')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}"));
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: 4,
+                    itemBuilder: (context, index) => const TripSkeleton(),
+                  );
                 }
 
                 List<Trip> trips = snapshot.data!.docs.map((doc) {
@@ -514,6 +520,98 @@ class _TripsScreenState extends State<TripsScreen> {
         children: [
           Text(label, style: const TextStyle(color: kGreyColor, fontSize: 16)),
           Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        ],
+      ),
+    );
+  }
+}
+
+class TripSkeleton extends StatelessWidget {
+  const TripSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: kWhiteColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Row(
+                children: [
+                  Skeleton(width: 44, height: 44, borderRadius: 12),
+                  SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Skeleton(width: 100, height: 18),
+                      SizedBox(height: 8),
+                      Skeleton(width: 140, height: 12),
+                    ],
+                  ),
+                ],
+              ),
+              const Skeleton(width: 70, height: 22),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 15),
+            child: Divider(thickness: 1, height: 1),
+          ),
+          Row(
+            children: [
+              Column(
+                children: [
+                  const Skeleton(width: 16, height: 16, borderRadius: 8),
+                  Container(width: 1.5, height: 40, color: Colors.grey.shade100),
+                  const Skeleton(width: 16, height: 16, borderRadius: 8),
+                ],
+              ),
+              const SizedBox(width: 15),
+              const Expanded(
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Skeleton(width: 60, height: 15),
+                        Skeleton(width: 80, height: 15),
+                      ],
+                    ),
+                    SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      children: [
+                        Skeleton(width: 100, height: 12),
+                      ],
+                    ),
+                    SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Skeleton(width: 90, height: 15),
+                        Skeleton(width: 80, height: 15),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Skeleton(width: 100, height: 20),
+              Skeleton(width: 100, height: 40, borderRadius: 10),
+            ],
+          ),
         ],
       ),
     );

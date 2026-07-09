@@ -1,9 +1,11 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
 import '../services/user_service.dart';
+import '../components/skeleton.dart';
 
 class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
@@ -44,7 +46,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return ListView.builder(
+              padding: const EdgeInsets.all(20),
+              itemCount: 8,
+              itemBuilder: (context, index) => const UserSkeleton(),
+            );
           }
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));
@@ -191,22 +197,27 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                     onPressed: () async {
                       if (_formKey.currentState!.validate()) {
                         try {
-                          // Note: In a real app, you'd use a Cloud Function to create users 
-                          // to avoid signing out the current admin. 
-                          // For this prototype, we'll assume Firebase Auth allows this or use a secondary app instance.
-                          
-                          // Creating the company user
-                          UserCredential result = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-                            email: _emailController.text,
-                            password: _passwordController.text,
+                          // إنشاء تطبيق مؤقت لإنشاء المستخدم دون تسجيل خروج الأدمن
+                          FirebaseApp secondaryApp = await Firebase.initializeApp(
+                            name: 'SecondaryApp',
+                            options: Firebase.app().options,
+                          );
+
+                          UserCredential result = await FirebaseAuth.instanceFor(app: secondaryApp)
+                              .createUserWithEmailAndPassword(
+                            email: _emailController.text.trim(),
+                            password: _passwordController.text.trim(),
                           );
 
                           await _userService.createCompanyProfile(
                             result.user!.uid,
-                            email: _emailController.text,
-                            nameAr: _nameArController.text,
-                            nameEn: _nameEnController.text,
+                            email: _emailController.text.trim(),
+                            nameAr: _nameArController.text.trim(),
+                            nameEn: _nameEnController.text.trim(),
                           );
+
+                          // حذف التطبيق المؤقت
+                          await secondaryApp.delete();
 
                           if (mounted) {
                             Navigator.pop(context);
@@ -258,6 +269,48 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
           borderRadius: BorderRadius.circular(15),
           borderSide: BorderSide.none,
         ),
+      ),
+    );
+  }
+}
+
+class UserSkeleton extends StatelessWidget {
+  const UserSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: kWhiteColor,
+        borderRadius: BorderRadius.circular(15),
+      ),
+      child: const Row(
+        children: [
+          Skeleton(width: 40, height: 40, borderRadius: 20),
+          SizedBox(width: 15),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Skeleton(width: 120, height: 16),
+                SizedBox(height: 8),
+                Skeleton(width: 180, height: 12),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Skeleton(width: 50, height: 18, borderRadius: 10),
+              SizedBox(height: 8),
+              Skeleton(width: 40, height: 12),
+            ],
+          ),
+          SizedBox(width: 10),
+          Skeleton(width: 20, height: 20, borderRadius: 10),
+        ],
       ),
     );
   }

@@ -47,6 +47,18 @@ class AuthService {
     await _auth.signOut();
   }
 
+  // Reset Password
+  Future<String?> resetPassword(String email) async {
+    try {
+      await _auth.sendPasswordResetEmail(email: email);
+      return null; // Success
+    } on FirebaseAuthException catch (e) {
+      return _handleAuthError(e);
+    } catch (e) {
+      return 'unexpected_error'.tr(args: [e.toString()]);
+    }
+  }
+
   // Error Handling
   String _handleAuthError(FirebaseAuthException e) {
     switch (e.code) {

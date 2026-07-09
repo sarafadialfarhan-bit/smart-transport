@@ -1,47 +1,25 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'screens/log_in_screen.dart';
 import 'screens/welcome_screen.dart';
+import 'screens/admin_panel_screen.dart';
+import 'screens/company_panel_screen.dart';
+import 'screens/search_screen.dart';
+import 'services/user_service.dart';
 
 void main() async {
-
-
-  Future<void> createAdminAccount() async {
-    try {
-      // 1. إنشاء الحساب في Firebase Auth
-      UserCredential credential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: "Admin@Admin.com",
-        password: "adminadmin",
-      );
-
-      // 2. إعداد بيانات الأدمن في Firestore
-      await FirebaseFirestore.instance.collection('users').doc(credential.user!.uid).set({
-        'uid': credential.user!.uid,
-        'name': 'System Admin',
-        'email': 'Admin@Admin.com',
-        'role': 'admin', // هذا الحقل هو المسؤول عن صلاحيات الأدمن
-        'status': 'active',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      print("تم إنشاء حساب الأدمن بنجاح!");
-    } catch (e) {
-      print("خطأ أثناء إنشاء الحساب: $e");
-    }
-  }
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await EasyLocalization.ensureInitialized();
-  createAdminAccount();
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('ar'), Locale('en')],
       path: 'assets/translations',
       fallbackLocale: const Locale('ar'),
       startLocale: const Locale('ar'),
-      child:  SmartTransportApp(),
+      child: const SmartTransportApp(),
     ),
   );
 }
@@ -62,7 +40,44 @@ class SmartTransportApp extends StatelessWidget {
         primarySwatch: Colors.blueGrey,
         useMaterial3: true,
       ),
-      home: WelcomeScreen(),
+      home: StreamBuilder<User?>(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(
+              body: Center(child: CircularProgressIndicator()),
+            );
+          }
+
+          if (snapshot.hasData && snapshot.data != null) {
+            return FutureBuilder<String?>(
+              future: UserService().getUserRole(snapshot.data!.uid),
+              builder: (context, roleSnapshot) {
+                if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                  return const Scaffold(
+                    body: Center(child: CircularProgressIndicator()),
+                  );
+                }
+
+                final role = roleSnapshot.data;
+                if (role == 'admin') {
+                  return const AdminPanelScreen();
+                } else if (role == 'company') {
+                  return const CompanyPanelScreen();
+                } else {
+                  return const SearchScreen();
+                }
+              },
+            );
+          }
+
+          return const WelcomeScreen();
+        },
+      ),
+      routes: {
+        '/login': (context) => const LogInScreen(),
+        '/welcome': (context) => const WelcomeScreen(),
+      },
     );
   }
 }

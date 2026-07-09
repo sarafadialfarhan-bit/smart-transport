@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
+import '../components/skeleton.dart';
 
 class FinancialReportsScreen extends StatelessWidget {
   final String? companyName;
@@ -31,7 +32,7 @@ class FinancialReportsScreen extends StatelessWidget {
         stream: bookingsQuery.snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const FinancialSkeleton();
           }
           if (snapshot.hasError) {
             return Center(child: Text("Error: ${snapshot.error}"));
@@ -221,6 +222,37 @@ class FinancialReportsScreen extends StatelessWidget {
             ),
           ),
           Text("+${NumberFormat('#,###').format(double.parse(amount))} $unit", style: const TextStyle(color: kGreenColor, fontWeight: FontWeight.bold, fontSize: 13)),
+        ],
+      ),
+    );
+  }
+}
+
+class FinancialSkeleton extends StatelessWidget {
+  const FinancialSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Skeleton(height: 180, borderRadius: 25),
+          const SizedBox(height: 30),
+          const Skeleton(width: 150, height: 20),
+          const SizedBox(height: 15),
+          ...List.generate(3, (index) => const Padding(
+            padding: EdgeInsets.only(bottom: 15),
+            child: Skeleton(height: 70, borderRadius: 15),
+          )),
+          const SizedBox(height: 30),
+          const Skeleton(width: 150, height: 20),
+          const SizedBox(height: 15),
+          ...List.generate(5, (index) => const Padding(
+            padding: EdgeInsets.only(bottom: 10),
+            child: Skeleton(height: 50, borderRadius: 10),
+          )),
         ],
       ),
     );

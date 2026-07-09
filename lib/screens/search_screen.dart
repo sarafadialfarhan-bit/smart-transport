@@ -287,20 +287,20 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 10),
 
                   PopularRouteItem(
-                    from: "aleppo".tr(),
-                    to: "damascus".tr(),
+                    from: "aleppo",
+                    to: "damascus",
                     price: "45,000 ${"currency".tr()}",
                     onTap: () => _quickSearch("aleppo", "damascus"),
                   ),
                   PopularRouteItem(
-                    from: "homs".tr(),
-                    to: "latakia".tr(),
+                    from: "homs",
+                    to: "latakia",
                     price: "25,000 ${"currency".tr()}",
                     onTap: () => _quickSearch("homs", "latakia"),
                   ),
                   PopularRouteItem(
-                    from: "damascus".tr(),
-                    to: "tartous".tr(),
+                    from: "damascus",
+                    to: "tartous",
                     price: "35,000 ${"currency".tr()}",
                     onTap: () => _quickSearch("damascus", "tartous"),
                   ),
@@ -392,8 +392,7 @@ class _SearchScreenState extends State<SearchScreen> {
             _buildDrawerItem(Icons.logout_rounded, "logout".tr(), () async {
               await FirebaseAuth.instance.signOut();
               if (mounted) {
-                setState(() {});
-                Navigator.of(context).popUntil((route) => route.isFirst);
+                Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
               }
             }, color: Colors.redAccent)
           else

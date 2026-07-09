@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:easy_localization/easy_localization.dart';
 import '../screens/trips_screen.dart';
 
 class BookingService {
@@ -18,6 +19,9 @@ class BookingService {
     await _db.runTransaction((transaction) async {
       final tripDoc = await transaction.get(_db.collection('trips').doc(trip.id));
       if (!tripDoc.exists) throw "Trip does not exist";
+
+      String status = tripDoc.data()?['status'] ?? 'active';
+      if (status != 'active') throw "trip_no_longer_available".tr();
 
       int currentBooked = tripDoc.data()?['bookedSeats'] ?? 0;
       int totalSeats = tripDoc.data()?['totalSeats'] ?? 1;

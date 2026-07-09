@@ -5,6 +5,10 @@ import '../components/custom_button.dart';
 import '../components/custom_text_form_field.dart';
 import '../components/background_decoration.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import 'admin_panel_screen.dart';
+import 'company_panel_screen.dart';
+import 'search_screen.dart';
 
 class SignUpScreen extends StatefulWidget {
   const SignUpScreen({super.key});
@@ -42,22 +46,53 @@ class _SignUpScreenState extends State<SignUpScreen> {
       _nameController.text.trim(),
     );
 
-    setState(() {
-      _isLoading = false;
-    });
-
     if (error == null) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text("signup_success".tr()),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context);
+      final user = _authService.currentUser;
+      if (user != null) {
+        final role = await UserService().getUserRole(user.uid);
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text("signup_success".tr()),
+              backgroundColor: Colors.green,
+            ),
+          );
+          
+          if (role == 'admin') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
+              (route) => false,
+            );
+          } else if (role == 'company') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const CompanyPanelScreen()),
+              (route) => false,
+            );
+          } else {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const SearchScreen()),
+              (route) => false,
+            );
+          }
+        }
+      } else {
+         if (mounted) {
+          setState(() {
+            _isLoading = false;
+          });
+        }
       }
     } else {
       if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(error),
@@ -91,8 +126,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 Hero(
                   tag: 'logo',
                   child: Image.asset(
-                    "assets/images/logo.png",
-                    height: 120,
+                    'assets/images/icon.png',
+                    height: 100,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -139,12 +174,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 const SizedBox(height: 30),
                 Hero(
                   tag: 'signUp',
-                  child: _isLoading
-                      ? const CircularProgressIndicator(color: kPrimaryColor)
-                      : CustomButton(
-                          title: "sign_up".tr(),
-                          onPressed: _signUp,
-                        ),
+                  child: CustomButton(
+                    title: "sign_up".tr(),
+                    onPressed: _signUp,
+                    isLoading: _isLoading,
+                  ),
                 ),
                 const SizedBox(height: 20),
                 Row(

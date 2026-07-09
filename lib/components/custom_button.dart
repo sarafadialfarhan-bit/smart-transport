@@ -5,12 +5,14 @@ class CustomButton extends StatelessWidget {
   final String title;
   final void Function()? onPressed;
   final bool isSecondary;
+  final bool isLoading;
 
   const CustomButton({
     super.key,
     required this.title,
     this.onPressed,
     this.isSecondary = false,
+    this.isLoading = false,
   });
 
   @override
@@ -20,13 +22,16 @@ class CustomButton extends StatelessWidget {
       constraints: const BoxConstraints(maxWidth: 300),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
-        gradient: isSecondary ? kLightGradient : kDarkGradient,
+        gradient: (onPressed == null || isLoading)
+            ? LinearGradient(colors: [kGreyColor.withOpacity(0.5), kGreyColor.withOpacity(0.5)])
+            : (isSecondary ? kLightGradient : kDarkGradient),
         boxShadow: [
-          BoxShadow(
-            color: (isSecondary ? kPrimaryColor : kSecondaryColor).withOpacity(0.3),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
+          if (onPressed != null && !isLoading)
+            BoxShadow(
+              color: (isSecondary ? kPrimaryColor : kSecondaryColor).withOpacity(0.3),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
         ],
       ),
       child: MaterialButton(
@@ -34,16 +39,25 @@ class CustomButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(15),
         ),
         height: 55,
-        onPressed: onPressed,
-        child: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 20.0,
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-            fontFamily: 'Cairo',
-          ),
-        ),
+        onPressed: isLoading ? null : onPressed,
+        child: isLoading
+            ? const SizedBox(
+                height: 24,
+                width: 24,
+                child: CircularProgressIndicator(
+                  color: Colors.white,
+                  strokeWidth: 3,
+                ),
+              )
+            : Text(
+                title,
+                style: const TextStyle(
+                  fontSize: 20.0,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontFamily: 'Cairo',
+                ),
+              ),
       ),
     );
   }

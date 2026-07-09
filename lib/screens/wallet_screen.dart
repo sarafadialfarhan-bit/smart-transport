@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart';
+import '../components/skeleton.dart';
 
 class WalletScreen extends StatelessWidget {
   const WalletScreen({super.key});
@@ -26,6 +27,9 @@ class WalletScreen extends StatelessWidget {
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
         builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const WalletSkeleton();
+          }
           double balance = 0.0;
           if (snapshot.hasData && snapshot.data!.exists) {
             balance = (snapshot.data!.data() as Map<String, dynamic>)['walletBalance']?.toDouble() ?? 0.0;
@@ -172,6 +176,59 @@ class WalletScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class WalletSkeleton extends StatelessWidget {
+  const WalletSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(30),
+          decoration: const BoxDecoration(
+            color: kPrimaryColor,
+            borderRadius: BorderRadius.only(
+              bottomLeft: Radius.circular(30),
+              bottomRight: Radius.circular(30),
+            ),
+          ),
+          child: const Column(
+            children: [
+              Skeleton(width: 120, height: 16),
+              SizedBox(height: 10),
+              Skeleton(width: 200, height: 40),
+              SizedBox(height: 25),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Skeleton(width: 100, height: 40, borderRadius: 15),
+                  SizedBox(width: 20),
+                  Skeleton(width: 100, height: 40, borderRadius: 15),
+                ],
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Skeleton(width: 150, height: 20),
+              const SizedBox(height: 15),
+              ...List.generate(3, (index) => const Padding(
+                padding: EdgeInsets.only(bottom: 15),
+                child: Skeleton(height: 70, borderRadius: 15),
+              )),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

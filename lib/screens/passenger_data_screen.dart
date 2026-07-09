@@ -4,7 +4,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../components/custom_text_form_field.dart';
+import '../components/custom_button.dart';
 import '../services/booking_service.dart';
+import '../services/notification_service.dart';
 import 'trips_screen.dart';
 
 class PassengerDataScreen extends StatefulWidget {
@@ -209,48 +211,41 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
 
                     const SizedBox(height: 40),
 
-                    SizedBox(
-                      width: double.infinity,
-                      height: 60,
-                      child: ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () async {
-                                if (_formKey.currentState!.validate()) {
-                                  setState(() => _isLoading = true);
-                                  try {
-                                    await _bookingService.createBooking(
-                                      uid: FirebaseAuth.instance.currentUser!.uid,
-                                      trip: widget.trip,
-                                      passengerName: _nameController.text.trim(),
-                                      mobile: _mobileController.text.trim(),
-                                      nationalId: _nationalIdController.text.trim(),
-                                      gender: gender!,
-                                      seatPref: selectedSeatPref!,
-                                    );
-                                    _showSuccessDialog();
-                                  } catch (e) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-                                    );
-                                  } finally {
-                                    setState(() => _isLoading = false);
-                                  }
-                                }
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: kPrimaryColor,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          elevation: 5,
-                          shadowColor: kPrimaryColor.withOpacity(0.4),
-                        ),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(color: kWhiteColor)
-                            : Text(
-                                "confirm_final_booking".tr(),
-                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kWhiteColor),
-                              ),
-                      ),
+                    CustomButton(
+                      title: "confirm_final_booking".tr(),
+                      isLoading: _isLoading,
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          setState(() => _isLoading = true);
+                          try {
+                            await _bookingService.createBooking(
+                              uid: FirebaseAuth.instance.currentUser!.uid,
+                              trip: widget.trip,
+                              passengerName: _nameController.text.trim(),
+                              mobile: _mobileController.text.trim(),
+                              nationalId: _nationalIdController.text.trim(),
+                              gender: gender!,
+                              seatPref: selectedSeatPref!,
+                            );
+                            
+                            // Send booking confirmation notification
+                            await NotificationService().sendNotification(
+                              userId: FirebaseAuth.instance.currentUser!.uid,
+                              title: 'booking_success'.tr(),
+                              body: 'booking_trip_with'.tr(args: [widget.trip.company.tr()]),
+                              type: 'alert',
+                            );
+
+                            _showSuccessDialog();
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                            );
+                          } finally {
+                            setState(() => _isLoading = false);
+                          }
+                        }
+                      },
                     ),
                     const SizedBox(height: 30),
                   ],

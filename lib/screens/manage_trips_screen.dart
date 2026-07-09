@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart';
 import '../services/trip_service.dart';
+import '../services/notification_service.dart';
+import '../components/skeleton.dart';
 
 class ManageTripsScreen extends StatefulWidget {
   final String? companyName;
@@ -14,12 +16,14 @@ class ManageTripsScreen extends StatefulWidget {
 
 class _ManageTripsScreenState extends State<ManageTripsScreen> {
   final TripService _tripService = TripService();
+  final NotificationService _notificationService = NotificationService();
   final _formKey = GlobalKey<FormState>();
 
   final TextEditingController _companyController = TextEditingController();
   final TextEditingController _priceNormalController = TextEditingController();
   final TextEditingController _priceVipController = TextEditingController();
   final TextEditingController _totalSeatsController = TextEditingController();
+  final TextEditingController _durationController = TextEditingController();
 
   String? _fromCity;
   String? _toCity;
@@ -40,6 +44,70 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("trip_deleted".tr())),
       );
+    }
+  }
+
+  void _cancelTrip(String id, String from, String to) async {
+    await FirebaseFirestore.instance.collection('trips').doc(id).update({
+      'status': 'cancelled',
+    });
+
+    await _notificationService.notifyTripStatusChange(
+      tripId: id,
+      status: 'cancelled',
+      from: from,
+      to: to,
+    );
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("trip_cancelled".tr())),
+      );
+    }
+  }
+
+  void _postponeTrip(String id, Timestamp current, String from, String to) async {
+    final pickedDate = await showDatePicker(
+      context: context,
+      initialDate: current.toDate().isAfter(DateTime.now()) ? current.toDate() : DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(const Duration(days: 365)),
+    );
+
+    if (pickedDate != null && mounted) {
+      final pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(current.toDate()),
+      );
+
+      if (pickedTime != null) {
+        final newDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+
+        await FirebaseFirestore.instance.collection('trips').doc(id).update({
+          'dateTime': Timestamp.fromDate(newDateTime),
+          'status': 'postponed',
+        });
+
+        await _notificationService.notifyTripStatusChange(
+          tripId: id,
+          status: 'postponed',
+          from: from,
+          to: to,
+          newDateTime: newDateTime,
+        );
+
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("trip_postponed".tr())),
+          );
+        }
+      }
     }
   }
 
@@ -70,7 +138,18 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
         builder: (context, snapshot) {
           if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}"));
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return Column(
+              children: [
+                _buildHeaderStats([]),
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(20),
+                    itemCount: 5,
+                    itemBuilder: (context, index) => const ManageTripSkeleton(),
+                  ),
+                ),
+              ],
+            );
           }
 
           final trips = snapshot.data!.docs;
@@ -136,6 +215,7 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
     int booked = trip['bookedSeats'] ?? 0;
     int total = trip['totalSeats'] ?? 1;
     bool isFull = booked >= total;
+    String status = trip['status'] ?? 'active';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -157,15 +237,39 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                   const Icon(Icons.business, color: kPrimaryColor, size: 20),
                   const SizedBox(width: 8),
                   Text(trip['company'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  if (status != 'active') ...[
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: status == 'cancelled' ? Colors.red.withOpacity(0.1) : Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        status == 'cancelled' ? "cancelled".tr() : "postponed".tr(),
+                        style: TextStyle(
+                          color: status == 'cancelled' ? Colors.red : Colors.orange,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-              PopupMenuButton(
-                itemBuilder: (context) => [
-                  PopupMenuItem(value: 'edit', child: Text("edit".tr())),
-                  PopupMenuItem(value: 'delete', child: Text("delete".tr(), style: const TextStyle(color: Colors.red))),
+              PopupMenuButton<String>(
+                itemBuilder: (context) => <PopupMenuEntry<String>>[
+                  PopupMenuItem<String>(value: 'postpone', child: Row(children: [const Icon(Icons.history_rounded, size: 20, color: Colors.orange), const SizedBox(width: 8), Text("postpone".tr())])),
+                  PopupMenuItem<String>(value: 'cancel_trip', child: Row(children: [const Icon(Icons.cancel_rounded, size: 20, color: Colors.red), const SizedBox(width: 8), Text("cancel_trip".tr())])),
+                  const PopupMenuDivider(),
+                  PopupMenuItem<String>(value: 'edit', child: Row(children: [const Icon(Icons.edit, size: 20, color: Colors.blue), const SizedBox(width: 8), Text("edit".tr())])),
+                  PopupMenuItem<String>(value: 'delete', child: Row(children: [const Icon(Icons.delete_forever, size: 20, color: Colors.red), const SizedBox(width: 8), Text("delete".tr(), style: const TextStyle(color: Colors.red))])),
                 ],
                 onSelected: (val) {
                   if (val == 'delete') _deleteTrip(id);
+                  if (val == 'cancel_trip') _cancelTrip(id, trip['from'] ?? '', trip['to'] ?? '');
+                  if (val == 'postpone') _postponeTrip(id, trip['dateTime'] as Timestamp, trip['from'] ?? '', trip['to'] ?? '');
+                  if (val == 'edit') _showEditTripDialog(id, trip);
                 },
               ),
             ],
@@ -182,6 +286,10 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                   Text(
                     "${DateFormat('yyyy/MM/dd').format((trip['dateTime'] as Timestamp).toDate())} | ${DateFormat('hh:mm a').format((trip['dateTime'] as Timestamp).toDate())}",
                     style: const TextStyle(fontSize: 12, color: kGreyColor),
+                  ),
+                  Text(
+                    "${trip['duration'] ?? '--'} ${"hours".tr()}",
+                    style: const TextStyle(fontSize: 12, color: kPrimaryColor, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -232,11 +340,32 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
     _priceNormalController.clear();
     _priceVipController.clear();
     _totalSeatsController.clear();
+    _durationController.clear();
     _fromCity = null;
     _toCity = null;
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.now();
 
+    _showTripFormDialog(title: "add_new_trip".tr(), isEdit: false);
+  }
+
+  void _showEditTripDialog(String id, Map<String, dynamic> trip) {
+    _companyController.text = trip['company'] ?? '';
+    _priceNormalController.text = trip['priceNormal']?.toString() ?? '';
+    _priceVipController.text = trip['priceVip']?.toString() ?? '';
+    _totalSeatsController.text = trip['totalSeats']?.toString() ?? '';
+    _durationController.text = trip['duration']?.toString() ?? '';
+    _fromCity = trip['from'];
+    _toCity = trip['to'];
+    
+    DateTime dt = (trip['dateTime'] as Timestamp).toDate();
+    _selectedDate = dt;
+    _selectedTime = TimeOfDay.fromDateTime(dt);
+
+    _showTripFormDialog(title: "edit_trip".tr(), isEdit: true, tripId: id);
+  }
+
+  void _showTripFormDialog({required String title, required bool isEdit, String? tripId}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -256,7 +385,7 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("add_new_trip".tr(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor)),
+                  Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor)),
                   const SizedBox(height: 20),
                   _buildTextField(
                     "company_name".tr(), 
@@ -285,7 +414,7 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                             final picked = await showDatePicker(
                               context: context,
                               initialDate: _selectedDate,
-                              firstDate: DateTime.now(),
+                              firstDate: DateTime.now().isBefore(_selectedDate) && isEdit ? DateTime.now().subtract(const Duration(days: 365)) : DateTime.now(),
                               lastDate: DateTime.now().add(const Duration(days: 365)),
                             );
                             if (picked != null) setModalState(() => _selectedDate = picked);
@@ -318,6 +447,8 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                   ),
                   const SizedBox(height: 15),
                   _buildTextField("total_seats".tr(), Icons.event_seat, controller: _totalSeatsController, keyboardType: TextInputType.number),
+                  const SizedBox(height: 15),
+                  _buildTextField("trip_duration_field".tr(), Icons.timer_outlined, controller: _durationController, keyboardType: const TextInputType.numberWithOptions(decimal: true)),
                   const SizedBox(height: 30),
                   SizedBox(
                     width: double.infinity,
@@ -333,7 +464,7 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                             _selectedTime.minute,
                           );
 
-                          await _tripService.addTrip({
+                          final tripData = {
                             'company': _companyController.text,
                             'from': _fromCity,
                             'to': _toCity,
@@ -341,9 +472,25 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                             'priceNormal': double.parse(_priceNormalController.text),
                             'priceVip': double.parse(_priceVipController.text),
                             'totalSeats': int.parse(_totalSeatsController.text),
-                            'bookedSeats': 0,
-                          });
-                          if (mounted) Navigator.pop(context);
+                            'duration': double.tryParse(_durationController.text) ?? 4.0,
+                          };
+
+                          if (isEdit && tripId != null) {
+                            await _tripService.updateTrip(tripId, tripData);
+                          } else {
+                            await _tripService.addTrip({
+                              ...tripData,
+                              'bookedSeats': 0,
+                              'status': 'active',
+                            });
+                          }
+                          
+                          if (mounted) {
+                             Navigator.pop(context);
+                             ScaffoldMessenger.of(context).showSnackBar(
+                               SnackBar(content: Text(isEdit ? "trip_updated".tr() : "trip_saved".tr())),
+                             );
+                          }
                         }
                       },
                       style: ElevatedButton.styleFrom(
@@ -413,6 +560,73 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
           Icon(icon, color: kPrimaryColor, size: 20),
           const SizedBox(width: 10),
           Text(text, style: const TextStyle(fontSize: 14)),
+        ],
+      ),
+    );
+  }
+}
+
+class ManageTripSkeleton extends StatelessWidget {
+  const ManageTripSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: kWhiteColor,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Skeleton(width: 20, height: 20, borderRadius: 10),
+                  SizedBox(width: 8),
+                  Skeleton(width: 100, height: 18),
+                ],
+              ),
+              Skeleton(width: 30, height: 30, borderRadius: 15),
+            ],
+          ),
+          const Divider(),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Skeleton(width: 60, height: 18),
+                  Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 8),
+                    child: Skeleton(width: 16, height: 16),
+                  ),
+                  Skeleton(width: 60, height: 18),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Skeleton(width: 70, height: 18),
+                  SizedBox(height: 5),
+                  Skeleton(width: 120, height: 12),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 15),
+          Row(
+            children: [
+              const Expanded(
+                child: Skeleton(height: 10, borderRadius: 5),
+              ),
+              const SizedBox(width: 10),
+              Skeleton(width: 60, height: 12),
+            ],
+          ),
         ],
       ),
     );

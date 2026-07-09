@@ -5,6 +5,7 @@ import '../constants.dart';
 import 'manage_trips_screen.dart';
 import 'user_management_screen.dart';
 import 'financial_reports_screen.dart';
+import '../services/auth_service.dart';
 
 class AdminPanelScreen extends StatelessWidget {
   const AdminPanelScreen({super.key});
@@ -22,6 +23,17 @@ class AdminPanelScreen extends StatelessWidget {
         backgroundColor: kSecondaryColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: kWhiteColor),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: () async {
+              await AuthService().signOut();
+              if (context.mounted) {
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
+            },
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -37,27 +49,6 @@ class AdminPanelScreen extends StatelessWidget {
             const SizedBox(height: 15),
             _buildAdminOption(
               context,
-              title: "manage_trips".tr(),
-              subtitle: "manage_trips_desc".tr(),
-              icon: Icons.bus_alert_rounded,
-              color: Colors.blue,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ManageTripsScreen()),
-                );
-              },
-            ),
-            _buildAdminOption(
-              context,
-              title: "booking_history".tr(),
-              subtitle: "booking_history_desc".tr(),
-              icon: Icons.list_alt_rounded,
-              color: Colors.orange,
-              onTap: () {},
-            ),
-            _buildAdminOption(
-              context,
               title: "manage_users".tr(),
               subtitle: "manage_users_desc".tr(),
               icon: Icons.people_alt_rounded,
@@ -66,6 +57,19 @@ class AdminPanelScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const UserManagementScreen()),
+                );
+              },
+            ),
+            _buildAdminOption(
+              context,
+              title: "manage_all_trips".tr(),
+              subtitle: "manage_trips_desc".tr(),
+              icon: Icons.bus_alert_rounded,
+              color: Colors.blue,
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const ManageTripsScreen()),
                 );
               },
             ),
@@ -104,42 +108,27 @@ class AdminPanelScreen extends StatelessWidget {
 
   Widget _buildRealtimeStats() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('trips').snapshots(),
-      builder: (context, tripsSnapshot) {
-        return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').snapshots(),
-          builder: (context, usersSnapshot) {
-            return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('bookings').snapshots(),
-              builder: (context, bookingsSnapshot) {
-                int totalTrips = tripsSnapshot.hasData ? tripsSnapshot.data!.docs.length : 0;
-                int totalUsers = usersSnapshot.hasData ? usersSnapshot.data!.docs.length : 0;
-                int todayBookings = bookingsSnapshot.hasData ? bookingsSnapshot.data!.docs.length : 0; // Simplified
-                
-                double totalEarnings = 0;
-                if (bookingsSnapshot.hasData) {
-                  for (var doc in bookingsSnapshot.data!.docs) {
-                    totalEarnings += (doc.data() as Map<String, dynamic>)['totalPrice'] ?? 0.0;
-                  }
-                }
+      stream: FirebaseFirestore.instance.collection('users').snapshots(),
+      builder: (context, usersSnapshot) {
+        int totalUsers = usersSnapshot.hasData ? usersSnapshot.data!.docs.length : 0;
+        int totalCompanies = 0;
+        if (usersSnapshot.hasData) {
+          totalCompanies = usersSnapshot.data!.docs
+              .where((doc) => (doc.data() as Map<String, dynamic>)['role'] == 'company')
+              .length;
+        }
 
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 1.5,
-                  children: [
-                    _buildStatCard("total_trips".tr(), totalTrips.toString(), Icons.directions_bus, Colors.blue),
-                    _buildStatCard("today_bookings".tr(), todayBookings.toString(), Icons.bookmark_added, Colors.orange),
-                    _buildStatCard("total_users".tr(), totalUsers.toString(), Icons.people, Colors.teal),
-                    _buildStatCard("earnings".tr(), "${(totalEarnings / 1000000).toStringAsFixed(1)}M", Icons.payments, kGreenColor),
-                  ],
-                );
-              },
-            );
-          },
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 15,
+          mainAxisSpacing: 15,
+          childAspectRatio: 1.5,
+          children: [
+            _buildStatCard("total_users".tr(), totalUsers.toString(), Icons.people, Colors.teal),
+            _buildStatCard("total_companies".tr(), totalCompanies.toString(), Icons.business, Colors.blue),
+          ],
         );
       },
     );

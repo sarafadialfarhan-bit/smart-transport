@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart';
 import '../services/booking_service.dart';
+import '../components/skeleton.dart';
 
 class MyTripsScreen extends StatelessWidget {
   const MyTripsScreen({super.key});
@@ -42,14 +43,23 @@ class MyTripsScreen extends StatelessWidget {
           stream: bookingService.getUserBookings(user!.uid),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+                itemCount: 3,
+                itemBuilder: (context, index) => const MyTripSkeleton(),
+              );
             }
 
             final bookings = snapshot.data?.docs ?? [];
             
-            // For simplicity in this demo, we'll treat all as upcoming or separate by status
-            final upcoming = bookings.where((b) => (b.data() as Map)['status'] == 'confirmed').toList();
-            final past = bookings.where((b) => (b.data() as Map)['status'] == 'finished').toList();
+            final upcoming = bookings.where((b) {
+              final data = b.data() as Map<String, dynamic>;
+              return data['status'] == 'confirmed' || data['status'] == 'postponed';
+            }).toList();
+            final past = bookings.where((b) {
+              final data = b.data() as Map<String, dynamic>;
+              return data['status'] == 'finished' || data['status'] == 'cancelled';
+            }).toList();
 
             return TabBarView(
               children: [
@@ -554,6 +564,112 @@ class MySeparator extends StatelessWidget {
           }),
         );
       },
+    );
+  }
+}
+
+class MyTripSkeleton extends StatelessWidget {
+  const MyTripSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 25),
+      decoration: BoxDecoration(
+        color: kWhiteColor,
+        borderRadius: BorderRadius.circular(25),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.grey.shade200,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+            ),
+            child: const Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Skeleton(width: 100, height: 20),
+                Skeleton(width: 80, height: 15),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 25, 20, 15),
+            child: Column(
+              children: [
+                const Row(
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Skeleton(width: 60, height: 20),
+                        SizedBox(height: 5),
+                        Skeleton(width: 80, height: 12),
+                      ],
+                    ),
+                    Expanded(child: SizedBox()),
+                    Skeleton(width: 40, height: 40, borderRadius: 20),
+                    Expanded(child: SizedBox()),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Skeleton(width: 60, height: 20),
+                        SizedBox(height: 5),
+                        Skeleton(width: 80, height: 12),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Skeleton(width: 70, height: 40),
+                    Skeleton(width: 70, height: 40),
+                    Skeleton(width: 70, height: 40),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 25),
+                  child: MySeparator(color: Colors.grey),
+                ),
+                const Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Skeleton(width: 40, height: 12),
+                        SizedBox(height: 8),
+                        Skeleton(width: 60, height: 20),
+                      ],
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Skeleton(width: 40, height: 12),
+                        SizedBox(height: 8),
+                        Skeleton(width: 80, height: 25),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 25),
+                Row(
+                  children: [
+                    Expanded(child: Skeleton(height: 50, borderRadius: 15)),
+                    const SizedBox(width: 10),
+                    Expanded(child: Skeleton(height: 50, borderRadius: 15)),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 10),
+        ],
+      ),
     );
   }
 }
