@@ -218,5 +218,6 @@
   "unexpected_error": "حدث خطأ غير متوقع: {}",
   "login_success": "تم تسجيل الدخول بنجاح!",
   "signup_success": "تم إنشاء الحساب بنجاح!",
-  "auth_error_password_mismatch": "كلمتا المرور غير متطابقتين."
+  "auth_error_password_mismatch": "كلمتا المرور غير متطابقتين.",
+  "login_required_to_book": "يرجى تسجيل الدخول لتأكيد حجزك"
 }

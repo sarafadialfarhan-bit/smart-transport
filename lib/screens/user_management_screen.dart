@@ -1,19 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
+import '../services/user_service.dart';
 
-class UserManagementScreen extends StatelessWidget {
+class UserManagementScreen extends StatefulWidget {
   const UserManagementScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String>> users = [
-      {"name": "أحمد محمد", "email": "ahmed@example.com", "role": "مسافر", "status": "نشط"},
-      {"name": "سارة علي", "email": "sara@example.com", "role": "مسافر", "status": "نشط"},
-      {"name": "محمد حسن", "email": "mohammed@example.com", "role": "سائق", "status": "نشط"},
-      {"name": "ليلى محمود", "email": "layla@example.com", "role": "مسافر", "status": "محظور"},
-    ];
+  State<UserManagementScreen> createState() => _UserManagementScreenState();
+}
 
+class _UserManagementScreenState extends State<UserManagementScreen> {
+  final UserService _userService = UserService();
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final TextEditingController _nameArController = TextEditingController();
+  final TextEditingController _nameEnController = TextEditingController();
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -26,80 +34,230 @@ class UserManagementScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: kWhiteColor),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: users.length,
-        itemBuilder: (context, index) {
-          final user = users[index];
-          final bool isBlocked = user['status'] == "محظور";
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddCompanyDialog(),
+        backgroundColor: kPrimaryColor,
+        icon: const Icon(Icons.add_business, color: kWhiteColor),
+        label: Text("add_company".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold)),
+      ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
 
-          return Container(
-            margin: const EdgeInsets.only(bottom: 15),
-            padding: const EdgeInsets.all(15),
-            decoration: BoxDecoration(
-              color: kWhiteColor,
-              borderRadius: BorderRadius.circular(15),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))
-              ],
-            ),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: kSecondaryColor.withOpacity(0.1),
-                  child: Text(
-                    user['name']![0],
-                    style: const TextStyle(color: kSecondaryColor, fontWeight: FontWeight.bold),
-                  ),
+          final users = snapshot.data?.docs ?? [];
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: users.length,
+            itemBuilder: (context, index) {
+              final userData = users[index].data() as Map<String, dynamic>;
+              final userId = users[index].id;
+              
+              String name = userData['name'] ?? 'Unknown';
+              if (userData['role'] == 'company') {
+                name = context.locale.languageCode == 'ar' 
+                  ? (userData['companyNameAr'] ?? name)
+                  : (userData['companyNameEn'] ?? name);
+              }
+              
+              final String email = userData['email'] ?? '';
+              final String role = userData['role'] ?? 'user';
+              final bool isBlocked = userData['status'] == "blocked";
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 15),
+                padding: const EdgeInsets.all(15),
+                decoration: BoxDecoration(
+                  color: kWhiteColor,
+                  borderRadius: BorderRadius.circular(15),
+                  boxShadow: [
+                    BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 5))
+                  ],
                 ),
-                const SizedBox(width: 15),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(user['name']!, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      Text(user['email']!, style: const TextStyle(color: kGreyColor, fontSize: 12)),
-                    ],
-                  ),
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                child: Row(
                   children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isBlocked ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(10),
+                    CircleAvatar(
+                      backgroundColor: role == 'company' ? kPrimaryColor.withOpacity(0.1) : kSecondaryColor.withOpacity(0.1),
+                      child: Icon(
+                        role == 'company' ? Icons.business : Icons.person,
+                        color: role == 'company' ? kPrimaryColor : kSecondaryColor,
+                        size: 20,
                       ),
-                      child: Text(
-                        isBlocked ? "blocked".tr() : "active".tr(),
-                        style: TextStyle(
-                          color: isBlocked ? Colors.red : Colors.green,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
+                    ),
+                    const SizedBox(width: 15),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text(email, style: const TextStyle(color: kGreyColor, fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isBlocked ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Text(
+                            isBlocked ? "blocked".tr() : "active".tr(),
+                            style: TextStyle(
+                              color: isBlocked ? Colors.red : Colors.green,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(height: 5),
+                        Text(
+                          role.tr(),
+                          style: const TextStyle(color: kGreyColor, fontSize: 12),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 5),
-                    Text(
-                      user['role'] == "سائق" ? "driver".tr() : "passenger".tr(),
-                      style: const TextStyle(color: kGreyColor, fontSize: 12),
+                    const SizedBox(width: 10),
+                    PopupMenuButton(
+                      icon: const Icon(Icons.more_vert, color: kGreyColor),
+                      onSelected: (value) async {
+                        if (value == 'block') {
+                          await FirebaseFirestore.instance.collection('users').doc(userId).update({
+                            'status': isBlocked ? 'active' : 'blocked'
+                          });
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(value: 'block', child: Text(isBlocked ? "unblock".tr() : "block".tr())),
+                        PopupMenuItem(value: 'delete', child: Text("delete".tr(), style: const TextStyle(color: Colors.red))),
+                      ],
                     ),
                   ],
                 ),
-                const SizedBox(width: 10),
-                PopupMenuButton(
-                  icon: const Icon(Icons.more_vert, color: kGreyColor),
-                  itemBuilder: (context) => [
-                    PopupMenuItem(child: Text("edit".tr())),
-                    PopupMenuItem(child: Text(isBlocked ? "unblock".tr() : "block".tr())),
-                    PopupMenuItem(child: Text("delete".tr(), style: const TextStyle(color: Colors.red))),
-                  ],
-                ),
-              ],
-            ),
+              );
+            },
           );
         },
+      ),
+    );
+  }
+
+  void _showAddCompanyDialog() {
+    _emailController.clear();
+    _passwordController.clear();
+    _nameArController.clear();
+    _nameEnController.clear();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.of(context).viewInsets.bottom,
+          top: 30,
+          left: 20,
+          right: 20,
+        ),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("add_new_company".tr(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor)),
+                const SizedBox(height: 20),
+                _buildTextField("email".tr(), Icons.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
+                const SizedBox(height: 15),
+                _buildTextField("password".tr(), Icons.lock, controller: _passwordController, isPassword: true),
+                const SizedBox(height: 15),
+                _buildTextField("company_name_ar".tr(), Icons.business, controller: _nameArController),
+                const SizedBox(height: 15),
+                _buildTextField("company_name_en".tr(), Icons.business, controller: _nameEnController),
+                const SizedBox(height: 30),
+                SizedBox(
+                  width: double.infinity,
+                  height: 55,
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      if (_formKey.currentState!.validate()) {
+                        try {
+                          // Note: In a real app, you'd use a Cloud Function to create users 
+                          // to avoid signing out the current admin. 
+                          // For this prototype, we'll assume Firebase Auth allows this or use a secondary app instance.
+                          
+                          // Creating the company user
+                          UserCredential result = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+                            email: _emailController.text,
+                            password: _passwordController.text,
+                          );
+
+                          await _userService.createCompanyProfile(
+                            result.user!.uid,
+                            email: _emailController.text,
+                            nameAr: _nameArController.text,
+                            nameEn: _nameEnController.text,
+                          );
+
+                          if (mounted) {
+                            Navigator.pop(context);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("company_created_success".tr())),
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(e.toString())),
+                            );
+                          }
+                        }
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: kPrimaryColor,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                    ),
+                    child: Text("save".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold, fontSize: 16)),
+                  ),
+                ),
+                const SizedBox(height: 30),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTextField(String hint, IconData icon, {
+    required TextEditingController controller,
+    TextInputType? keyboardType,
+    bool isPassword = false,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      obscureText: isPassword,
+      validator: (value) => value == null || value.isEmpty ? 'required'.tr() : null,
+      decoration: InputDecoration(
+        hintText: hint,
+        prefixIcon: Icon(icon, color: kPrimaryColor, size: 20),
+        filled: true,
+        fillColor: Colors.grey.shade100,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(15),
+          borderSide: BorderSide.none,
+        ),
       ),
     );
   }

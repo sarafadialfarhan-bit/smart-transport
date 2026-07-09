@@ -1,24 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
 import 'passenger_data_screen.dart';
+import 'log_in_screen.dart';
 
 class Trip {
+  final String id;
   final String company;
   final String from;
   final String to;
-  final String time;
-  final String price;
+  final DateTime dateTime;
+  final double price;
   final int availableSeats;
   final String busType;
-  final String duration;
+  final double duration;
 
   Trip({
+    required this.id,
     required this.company,
     required this.from,
     required this.to,
-    required this.time,
+    required this.dateTime,
     required this.price,
     required this.availableSeats,
     required this.busType,
@@ -45,114 +50,7 @@ class TripsScreen extends StatefulWidget {
 }
 
 class _TripsScreenState extends State<TripsScreen> {
-  late List<Trip> filteredTrips;
   String selectedFilter = 'cheapest';
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeData();
-  }
-
-  void _initializeData() {
-    List<Trip> allTrips = [
-      Trip(
-        company: "company_aman",
-        from: widget.fromCity,
-        to: widget.toCity,
-        time: "08:00 AM",
-        price: "45,000",
-        availableSeats: 5,
-        busType: "VIP",
-        duration: "4.0",
-      ),
-      Trip(
-        company: "company_kadmous",
-        from: widget.fromCity,
-        to: widget.toCity,
-        time: "10:30 AM",
-        price: "48,000",
-        availableSeats: 12,
-        busType: "normal",
-        duration: "4.5",
-      ),
-      Trip(
-        company: "company_ittihad",
-        from: widget.fromCity,
-        to: widget.toCity,
-        time: "01:00 PM",
-        price: "42,000",
-        availableSeats: 8,
-        busType: "normal",
-        duration: "5.0",
-      ),
-      Trip(
-        company: "company_aman",
-        from: widget.fromCity,
-        to: widget.toCity,
-        time: "03:30 PM",
-        price: "55,000",
-        availableSeats: 3,
-        busType: "VIP",
-        duration: "3.5",
-      ),
-      Trip(
-        company: "company_kadmous",
-        from: widget.fromCity,
-        to: widget.toCity,
-        time: "09:00 PM",
-        price: "45,000",
-        availableSeats: 0,
-        busType: "normal",
-        duration: "4.2",
-      ),
-    ];
-
-    // Filter by bus type if not "all" (or just show all if search screen logic passes something else)
-    if (widget.seatType != "all") {
-      filteredTrips = allTrips.where((trip) => 
-        trip.busType.toLowerCase() == widget.seatType.toLowerCase()
-      ).toList();
-    } else {
-      filteredTrips = List.from(allTrips);
-    }
-
-    // Fallback if filtered list is empty
-    if (filteredTrips.isEmpty) {
-      filteredTrips = List.from(allTrips);
-    }
-
-    _applyFilter('cheapest');
-  }
-
-  void _applyFilter(String filter) {
-    setState(() {
-      selectedFilter = filter;
-      switch (filter) {
-        case 'fastest':
-          filteredTrips.sort((a, b) => double.parse(a.duration).compareTo(double.parse(b.duration)));
-          break;
-        case 'cheapest':
-          filteredTrips.sort((a, b) => 
-            double.parse(a.price.replaceAll(',', '')).compareTo(double.parse(b.price.replaceAll(',', ''))));
-          break;
-        case 'earliest':
-          filteredTrips.sort((a, b) => _parseTime(a.time).compareTo(_parseTime(b.time)));
-          break;
-        case 'latest':
-          filteredTrips.sort((a, b) => _parseTime(b.time).compareTo(_parseTime(a.time)));
-          break;
-      }
-    });
-  }
-
-  DateTime _parseTime(String timeStr) {
-    try {
-      return DateFormat("hh:mm a").parse(timeStr);
-    } catch (e) {
-      return DateTime.now();
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -173,19 +71,79 @@ class _TripsScreenState extends State<TripsScreen> {
           _buildSearchSummary(),
           _buildFilterBar(),
           Expanded(
-            child: filteredTrips.isEmpty 
-              ? _buildEmptyState()
-              : ListView.builder(
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('trips')
+                  .where('from', isEqualTo: widget.fromCity)
+                  .where('to', isEqualTo: widget.toCity)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}"));
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                List<Trip> trips = snapshot.data!.docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  return Trip(
+                    id: doc.id,
+                    company: data['company'] ?? '',
+                    from: data['from'] ?? '',
+                    to: data['to'] ?? '',
+                    dateTime: (data['dateTime'] as Timestamp).toDate(),
+                    price: widget.seatType.toLowerCase() == 'vip' ? (data['priceVip'] ?? 0.0).toDouble() : (data['priceNormal'] ?? 0.0).toDouble(),
+                    availableSeats: (data['totalSeats'] ?? 0) - (data['bookedSeats'] ?? 0),
+                    busType: widget.seatType,
+                    duration: (data['duration'] ?? 4.0).toDouble(),
+                  );
+                }).toList();
+
+                trips = trips.where((t) => 
+                  t.dateTime.year == widget.date.year &&
+                  t.dateTime.month == widget.date.month &&
+                  t.dateTime.day == widget.date.day
+                ).toList();
+
+                _applyFilterLogic(trips);
+
+                if (trips.isEmpty) return _buildEmptyState();
+
+                return ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
-                  itemCount: filteredTrips.length,
+                  itemCount: trips.length,
                   itemBuilder: (context, index) {
-                    return _buildTripCard(filteredTrips[index]);
+                    return _buildTripCard(trips[index]);
                   },
-                ),
+                );
+              },
+            ),
           ),
         ],
       ),
     );
+  }
+
+  void _applyFilterLogic(List<Trip> trips) {
+    switch (selectedFilter) {
+      case 'fastest':
+        trips.sort((a, b) => a.duration.compareTo(b.duration));
+        break;
+      case 'cheapest':
+        trips.sort((a, b) => a.price.compareTo(b.price));
+        break;
+      case 'earliest':
+        trips.sort((a, b) => a.dateTime.compareTo(b.dateTime));
+        break;
+      case 'latest':
+        trips.sort((a, b) => b.dateTime.compareTo(a.dateTime));
+        break;
+    }
+  }
+
+  void _applyFilter(String filter) {
+    setState(() {
+      selectedFilter = filter;
+    });
   }
 
   Widget _buildSearchSummary() {
@@ -346,7 +304,7 @@ class _TripsScreenState extends State<TripsScreen> {
                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
                             ),
                             Text(
-                              trip.busType == "VIP" 
+                              trip.busType.toLowerCase() == "vip" 
                                   ? "VIP - ${"very_comfortable".tr()}" 
                                   : "${"normal".tr()} - ${"air_conditioned".tr()}",
                               style: const TextStyle(color: kGreyColor, fontSize: 12),
@@ -356,7 +314,7 @@ class _TripsScreenState extends State<TripsScreen> {
                       ],
                     ),
                     Text(
-                      "${trip.price} ${"currency".tr()}",
+                      "${trip.price.toStringAsFixed(0)} ${"currency".tr()}",
                       style: const TextStyle(
                         color: kGreenColor,
                         fontWeight: FontWeight.bold,
@@ -387,7 +345,7 @@ class _TripsScreenState extends State<TripsScreen> {
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
                               Text(
-                                _formatTime(trip.time),
+                                DateFormat('hh:mm a').format(trip.dateTime),
                                 style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
                               ),
                               Text(
@@ -473,15 +431,6 @@ class _TripsScreenState extends State<TripsScreen> {
     );
   }
 
-  String _formatTime(String time) {
-    if (time.contains("AM")) {
-      return time.replaceFirst("AM", "am".tr());
-    } else if (time.contains("PM")) {
-      return time.replaceFirst("PM", "pm".tr());
-    }
-    return time;
-  }
-
   void _confirmBooking(Trip trip) {
     showModalBottomSheet(
       context: context,
@@ -503,8 +452,8 @@ class _TripsScreenState extends State<TripsScreen> {
               const SizedBox(height: 20),
               _buildModalRow("company".tr(), trip.company.tr()),
               _buildModalRow("${"from".tr()} ← ${"to".tr()}", "${trip.from.tr()} ← ${trip.to.tr()}"),
-              _buildModalRow("time".tr(), _formatTime(trip.time)),
-              _buildModalRow("price".tr(), "${trip.price} ${"currency".tr()}"),
+              _buildModalRow("time".tr(), DateFormat('hh:mm a').format(trip.dateTime)),
+              _buildModalRow("price".tr(), "${trip.price.toStringAsFixed(0)} ${"currency".tr()}"),
               const SizedBox(height: 30),
               SizedBox(
                 width: double.infinity,
@@ -512,12 +461,31 @@ class _TripsScreenState extends State<TripsScreen> {
                 child: ElevatedButton(
                   onPressed: () {
                     Navigator.pop(context);
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => PassengerDataScreen(trip: trip),
-                      ),
-                    );
+                    if (FirebaseAuth.instance.currentUser != null) {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PassengerDataScreen(trip: trip),
+                        ),
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("login_required_to_book".tr()),
+                          backgroundColor: kSecondaryColor,
+                          action: SnackBarAction(
+                            label: "login".tr(),
+                            textColor: kWhiteColor,
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (context) => const LogInScreen()),
+                              );
+                            },
+                          ),
+                        ),
+                      );
+                    }
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: kPrimaryColor,

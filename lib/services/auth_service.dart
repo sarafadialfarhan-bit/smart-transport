@@ -1,13 +1,27 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'user_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final UserService _userService = UserService();
+
+  User? get currentUser => _auth.currentUser;
 
   // Sign Up
-  Future<String?> signUp(String email, String password) async {
+  Future<String?> signUp(String email, String password, String name) async {
     try {
-      await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      UserCredential credential = await _auth.createUserWithEmailAndPassword(email: email, password: password);
+      
+      // Update display name
+      await credential.user!.updateDisplayName(name);
+
+      // Create user profile in Firestore
+      await _userService.createUserProfile(credential.user!.uid, {
+        'name': name,
+        'email': email,
+      });
+
       return null; // Success
     } on FirebaseAuthException catch (e) {
       return _handleAuthError(e);

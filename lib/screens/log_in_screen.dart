@@ -5,6 +5,9 @@ import '../components/custom_button.dart';
 import '../components/custom_text_form_field.dart';
 import '../components/background_decoration.dart';
 import '../services/auth_service.dart';
+import '../services/user_service.dart';
+import 'admin_panel_screen.dart';
+import 'company_panel_screen.dart';
 import 'forget_password_screen.dart';
 import 'sign_up_screen.dart';
 
@@ -39,6 +42,26 @@ class _LogInScreenState extends State<LogInScreen> {
 
     if (error == null) {
       if (mounted) {
+        final user = _authService.currentUser;
+        if (user != null) {
+          final role = await UserService().getUserRole(user.uid);
+          if (role == 'admin') {
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const AdminPanelScreen()),
+              (route) => false,
+            );
+            return;
+          } else if (role == 'company') {
+            // We will create this screen next
+            Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(builder: (context) => const CompanyPanelScreen()),
+              (route) => false,
+            );
+            return;
+          }
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("login_success".tr()),

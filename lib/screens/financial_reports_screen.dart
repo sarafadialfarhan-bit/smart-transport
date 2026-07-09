@@ -1,12 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../constants.dart';
 
 class FinancialReportsScreen extends StatelessWidget {
-  const FinancialReportsScreen({super.key});
+  final String? companyName;
+  const FinancialReportsScreen({super.key, this.companyName});
 
   @override
   Widget build(BuildContext context) {
+    Query bookingsQuery = FirebaseFirestore.instance.collection('bookings').orderBy('createdAt', descending: true);
+    if (companyName != null) {
+      bookingsQuery = bookingsQuery.where('company', isEqualTo: companyName);
+    }
+
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -19,73 +27,141 @@ class FinancialReportsScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: kWhiteColor),
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildSummaryCard(),
-            const SizedBox(height: 30),
-            Text(
-              "revenue_details".tr(),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: bookingsQuery.snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Error: ${snapshot.error}"));
+          }
+
+          final bookings = snapshot.data?.docs ?? [];
+          double totalEarnings = 0;
+          double dailyRevenue = 0;
+          double weeklyRevenue = 0;
+          double monthlyRevenue = 0;
+
+          DateTime now = DateTime.now();
+          DateTime today = DateTime(now.year, now.month, now.day);
+          DateTime weekAgo = now.subtract(const Duration(days: 7));
+          DateTime monthAgo = DateTime(now.year, now.month - 1, now.day);
+
+          for (var doc in bookings) {
+            final data = doc.data() as Map<String, dynamic>;
+            double price = (data['totalPrice'] ?? 0).toDouble();
+            totalEarnings += price;
+
+            Timestamp? createdAt = data['createdAt'] as Timestamp?;
+            if (createdAt != null) {
+              DateTime date = createdAt.toDate();
+              if (date.isAfter(today)) dailyRevenue += price;
+              if (date.isAfter(weekAgo)) weeklyRevenue += price;
+              if (date.isAfter(monthAgo)) monthlyRevenue += price;
+            }
+          }
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildSummaryCard(totalEarnings),
+                const SizedBox(height: 30),
+                Text(
+                  "revenue_details".tr(),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
+                ),
+                const SizedBox(height: 15),
+                _buildReportItem("daily_revenue".tr(), dailyRevenue.toStringAsFixed(0), "currency".tr(), Icons.today, Colors.blue),
+                _buildReportItem("weekly_revenue".tr(), weeklyRevenue.toStringAsFixed(0), "currency".tr(), Icons.calendar_view_week, Colors.orange),
+                _buildReportItem("monthly_revenue".tr(), monthlyRevenue.toStringAsFixed(0), "currency".tr(), Icons.calendar_month, Colors.purple),
+                const SizedBox(height: 30),
+                Text(
+                  "recent_transactions".tr(),
+                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
+                ),
+                const SizedBox(height: 15),
+                ListView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: bookings.length > 10 ? 10 : bookings.length,
+                  itemBuilder: (context, index) {
+                    final data = bookings[index].data() as Map<String, dynamic>;
+                    String title = "${"booking".tr()} ${data['from']} -> ${data['to']}";
+                    String amount = (data['totalPrice'] ?? 0).toString();
+                    Timestamp? createdAt = data['createdAt'] as Timestamp?;
+                    String time = createdAt != null ? DateFormat('hh:mm a').format(createdAt.toDate()) : "--:--";
+                    
+                    return _buildTransactionTile(title, amount, "currency".tr(), time);
+                  },
+                ),
+              ],
             ),
-            const SizedBox(height: 15),
-            _buildReportItem("daily_revenue".tr(), "450,000", "currency".tr(), Icons.today, Colors.blue),
-            _buildReportItem("weekly_revenue".tr(), "3,150,000", "currency".tr(), Icons.calendar_view_week, Colors.orange),
-            _buildReportItem("monthly_revenue".tr(), "12,600,000", "currency".tr(), Icons.calendar_month, Colors.purple),
-            const SizedBox(height: 30),
-            Text(
-              "recent_transactions".tr(),
-              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
-            ),
-            const SizedBox(height: 15),
-            _buildTransactionTile("حجز رحلة #12345", "75,000", "currency".tr(), "10:30 AM"),
-            _buildTransactionTile("شحن محفظة - كاش", "100,000", "currency".tr(), "09:15 AM"),
-            _buildTransactionTile("حجز رحلة #12344", "65,000", "currency".tr(), "08:45 AM"),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildSummaryCard() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(25),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [kSecondaryColor, kSecondaryColor.withOpacity(0.8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(25),
-        boxShadow: [
-          BoxShadow(color: kSecondaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
-        ],
-      ),
-      child: Column(
-        children: [
-          Text(
-            "total_earnings".tr(),
-            style: const TextStyle(color: Colors.white70, fontSize: 16),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            "25,450,000 ${"currency".tr()}",
-            style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _buildSimpleStat("trips".tr(), "342"),
-              Container(width: 1, height: 30, color: Colors.white24),
-              _buildSimpleStat("users".tr(), "1,204"),
-            ],
-          ),
-        ],
-      ),
+  Widget _buildSummaryCard(double totalEarnings) {
+    Query tripsQuery = FirebaseFirestore.instance.collection('trips');
+    if (companyName != null) {
+      tripsQuery = tripsQuery.where('company', isEqualTo: companyName);
+    }
+
+    return StreamBuilder<QuerySnapshot>(
+      stream: tripsQuery.snapshots(),
+      builder: (context, tripsSnapshot) {
+        return StreamBuilder<QuerySnapshot>(
+          stream: FirebaseFirestore.instance.collection('users').snapshots(),
+          builder: (context, usersSnapshot) {
+            int totalTrips = tripsSnapshot.hasData ? tripsSnapshot.data!.docs.length : 0;
+            int totalUsers = usersSnapshot.hasData ? usersSnapshot.data!.docs.length : 0;
+
+            return Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(25),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [kSecondaryColor, kSecondaryColor.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(25),
+                boxShadow: [
+                  BoxShadow(color: kSecondaryColor.withOpacity(0.3), blurRadius: 15, offset: const Offset(0, 8))
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    "total_earnings".tr(),
+                    style: const TextStyle(color: Colors.white70, fontSize: 16),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    "${NumberFormat('#,###').format(totalEarnings)} ${"currency".tr()}",
+                    style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildSimpleStat("trips".tr(), totalTrips.toString()),
+                      if (companyName == null) ...[
+                        Container(width: 1, height: 30, color: Colors.white24),
+                        _buildSimpleStat("users".tr(), totalUsers.toString()),
+                      ],
+                    ],
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -118,7 +194,7 @@ class FinancialReportsScreen extends StatelessWidget {
           ),
           const SizedBox(width: 15),
           Expanded(child: Text(title, style: const TextStyle(fontWeight: FontWeight.w500))),
-          Text("$amount $unit", style: const TextStyle(fontWeight: FontWeight.bold, color: kSecondaryColor)),
+          Text("${NumberFormat('#,###').format(double.parse(amount))} $unit", style: const TextStyle(fontWeight: FontWeight.bold, color: kSecondaryColor)),
         ],
       ),
     );
@@ -139,12 +215,12 @@ class FinancialReportsScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis),
                 Text(time, style: const TextStyle(color: kGreyColor, fontSize: 11)),
               ],
             ),
           ),
-          Text("+$amount $unit", style: const TextStyle(color: kGreenColor, fontWeight: FontWeight.bold)),
+          Text("+${NumberFormat('#,###').format(double.parse(amount))} $unit", style: const TextStyle(color: kGreenColor, fontWeight: FontWeight.bold, fontSize: 13)),
         ],
       ),
     );

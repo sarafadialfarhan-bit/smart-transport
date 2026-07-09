@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart';
 
 class WalletScreen extends StatelessWidget {
@@ -7,6 +9,8 @@ class WalletScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
@@ -19,81 +23,86 @@ class WalletScreen extends StatelessWidget {
         elevation: 0,
         iconTheme: const IconThemeData(color: kWhiteColor),
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            // بطاقة الرصيد العلوي
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(30),
-              decoration: const BoxDecoration(
-                color: kPrimaryColor,
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(30),
-                  bottomRight: Radius.circular(30),
-                ),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    "available_balance".tr(),
-                    style: const TextStyle(color: Colors.white70, fontSize: 16),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    "125,500 ${"currency".tr()}",
-                    style: const TextStyle(
-                      color: kWhiteColor,
-                      fontSize: 36,
-                      fontWeight: FontWeight.bold,
+      body: StreamBuilder<DocumentSnapshot>(
+        stream: FirebaseFirestore.instance.collection('users').doc(user?.uid).snapshots(),
+        builder: (context, snapshot) {
+          double balance = 0.0;
+          if (snapshot.hasData && snapshot.data!.exists) {
+            balance = (snapshot.data!.data() as Map<String, dynamic>)['walletBalance']?.toDouble() ?? 0.0;
+          }
+
+          return SingleChildScrollView(
+            child: Column(
+              children: [
+                // بطاقة الرصيد العلوي
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(30),
+                  decoration: const BoxDecoration(
+                    color: kPrimaryColor,
+                    borderRadius: BorderRadius.only(
+                      bottomLeft: Radius.circular(30),
+                      bottomRight: Radius.circular(30),
                     ),
                   ),
-                  const SizedBox(height: 25),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
                     children: [
-                      _buildHeaderButton(Icons.add_circle_outline, "top_up".tr()),
-                      const SizedBox(width: 20),
-                      _buildHeaderButton(Icons.history, "history".tr()),
+                      Text(
+                        "available_balance".tr(),
+                        style: const TextStyle(color: Colors.white70, fontSize: 16),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        "${NumberFormat("#,###").format(balance)} ${"currency".tr()}",
+                        style: const TextStyle(
+                          color: kWhiteColor,
+                          fontSize: 36,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 25),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _buildHeaderButton(Icons.add_circle_outline, "top_up".tr()),
+                          const SizedBox(width: 20),
+                          _buildHeaderButton(Icons.history, "history".tr()),
+                        ],
+                      ),
                     ],
                   ),
-                ],
-              ),
-            ),
+                ),
 
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "last_transactions".tr(),
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "last_transactions".tr(),
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
+                      ),
+                      const SizedBox(height: 15),
+                      // Mock transactions for now or fetch from Firestore
+                      _buildTransactionItem(
+                        "booking_trip_with".tr(args: ["company_aman".tr()]),
+                        "two_hours_ago".tr(),
+                        "- 45,000 ${"currency".tr()}",
+                        false,
+                      ),
+                      _buildTransactionItem(
+                        "top_up_cash".tr(),
+                        "yesterday".tr(),
+                        "+ 100,000 ${"currency".tr()}",
+                        true,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 15),
-                  _buildTransactionItem(
-                    "booking_trip_with".tr(args: ["company_aman".tr()]),
-                    "two_hours_ago".tr(),
-                    "- 45,000 ${"currency".tr()}",
-                    false,
-                  ),
-                  _buildTransactionItem(
-                    "top_up_cash".tr(),
-                    "yesterday".tr(),
-                    "+ 100,000 ${"currency".tr()}",
-                    true,
-                  ),
-                  _buildTransactionItem(
-                    "booking_trip_with".tr(args: ["company_kadmous".tr()]),
-                    "12 May 2024",
-                    "- 25,000 ${"currency".tr()}",
-                    false,
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

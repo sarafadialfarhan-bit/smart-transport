@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../constants.dart';
+import '../services/booking_service.dart';
 
 class MyTripsScreen extends StatelessWidget {
   const MyTripsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final bookingService = BookingService();
+
     return DefaultTabController(
       length: 2,
       child: Scaffold(
@@ -32,11 +38,26 @@ class MyTripsScreen extends StatelessWidget {
             ],
           ),
         ),
-        body: const TabBarView(
-          children: [
-            UpcomingTripsList(),
-            PastTripsList(),
-          ],
+        body: StreamBuilder<QuerySnapshot>(
+          stream: bookingService.getUserBookings(user!.uid),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            final bookings = snapshot.data?.docs ?? [];
+            
+            // For simplicity in this demo, we'll treat all as upcoming or separate by status
+            final upcoming = bookings.where((b) => (b.data() as Map)['status'] == 'confirmed').toList();
+            final past = bookings.where((b) => (b.data() as Map)['status'] == 'finished').toList();
+
+            return TabBarView(
+              children: [
+                UpcomingTripsList(bookings: upcoming),
+                PastTripsList(bookings: past),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -44,24 +65,11 @@ class MyTripsScreen extends StatelessWidget {
 }
 
 class UpcomingTripsList extends StatelessWidget {
-  const UpcomingTripsList({super.key});
+  final List<QueryDocumentSnapshot> bookings;
+  const UpcomingTripsList({super.key, required this.bookings});
 
   @override
   Widget build(BuildContext context) {
-    final bookings = [
-      {
-        "company": "شركة الأمان",
-        "from": "حلب",
-        "to": "دمشق",
-        "date": "2024/05/20",
-        "time": "08:00 صباحاً",
-        "seat": "14 (نافذة)",
-        "price": "45,000 ل.س",
-        "status": "confirmed".tr(),
-        "busNum": "554321",
-      },
-    ];
-
     if (bookings.isEmpty) {
       return _buildEmptyState(context, "no_upcoming_trips".tr(), Icons.airplane_ticket_outlined);
     }
@@ -70,40 +78,53 @@ class UpcomingTripsList extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
       itemCount: bookings.length,
       itemBuilder: (context, index) {
-        return _buildTicketCard(context, bookings[index], isUpcoming: true);
+        final data = bookings[index].data() as Map<String, dynamic>;
+        final dateTime = (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
+        
+        return _buildTicketCard(context, {
+          "company": data['company']?.toString() ?? "",
+          "from": (data['from']?.toString() ?? "").tr(),
+          "to": (data['to']?.toString() ?? "").tr(),
+          "date": DateFormat('yyyy/MM/dd').format(dateTime),
+          "time": DateFormat('hh:mm a').format(dateTime),
+          "seat": (data['seatPref']?.toString() ?? "").tr(),
+          "price": "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
+          "status": (data['status']?.toString() ?? "").tr(),
+          "busNum": bookings[index].id.substring(0, 6).toUpperCase(),
+        }, isUpcoming: true);
       },
     );
   }
 }
 
 class PastTripsList extends StatelessWidget {
-  const PastTripsList({super.key});
+  final List<QueryDocumentSnapshot> bookings;
+  const PastTripsList({super.key, required this.bookings});
 
   @override
   Widget build(BuildContext context) {
-    final pastBookings = [
-      {
-        "company": "شركة القدموس",
-        "from": "حمص",
-        "to": "اللاذقية",
-        "date": "2024/04/12",
-        "time": "10:30 صباحاً",
-        "seat": "05",
-        "price": "25,000 ل.س",
-        "status": "finished".tr(),
-        "busNum": "112233",
-      },
-    ];
-
-    if (pastBookings.isEmpty) {
+    if (bookings.isEmpty) {
       return _buildEmptyState(context, "no_past_trips".tr(), Icons.history);
     }
 
     return ListView.builder(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
-      itemCount: pastBookings.length,
+      itemCount: bookings.length,
       itemBuilder: (context, index) {
-        return _buildTicketCard(context, pastBookings[index], isUpcoming: false);
+        final data = bookings[index].data() as Map<String, dynamic>;
+        final dateTime = (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
+
+        return _buildTicketCard(context, {
+          "company": data['company']?.toString() ?? "",
+          "from": (data['from']?.toString() ?? "").tr(),
+          "to": (data['to']?.toString() ?? "").tr(),
+          "date": DateFormat('yyyy/MM/dd').format(dateTime),
+          "time": DateFormat('hh:mm a').format(dateTime),
+          "seat": (data['seatPref']?.toString() ?? "").tr(),
+          "price": "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
+          "status": (data['status']?.toString() ?? "").tr(),
+          "busNum": bookings[index].id.substring(0, 6).toUpperCase(),
+        }, isUpcoming: false);
       },
     );
   }

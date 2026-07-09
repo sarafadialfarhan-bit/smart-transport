@@ -218,5 +218,6 @@
   "unexpected_error": "An unexpected error occurred: {}",
   "login_success": "Logged in successfully!",
   "signup_success": "Account created successfully!",
-  "auth_error_password_mismatch": "Passwords do not match."
+  "auth_error_password_mismatch": "Passwords do not match.",
+  "login_required_to_book": "Please login to confirm your booking"
 }

@@ -39,6 +39,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
     String? error = await _authService.signUp(
       _emailController.text.trim(),
       _passwordController.text.trim(),
+      _nameController.text.trim(),
     );
 
     setState(() {

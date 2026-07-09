@@ -1,13 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
 import 'manage_trips_screen.dart';
-import 'user_management_screen.dart';
 import 'financial_reports_screen.dart';
 
-class AdminPanelScreen extends StatelessWidget {
-  const AdminPanelScreen({super.key});
+class CompanyPanelScreen extends StatefulWidget {
+  const CompanyPanelScreen({super.key});
+
+  @override
+  State<CompanyPanelScreen> createState() => _CompanyPanelScreenState();
+}
+
+class _CompanyPanelScreenState extends State<CompanyPanelScreen> {
+  String? companyNameAr;
+  String? companyNameEn;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCompanyData();
+  }
+
+  void _fetchCompanyData() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance.collection('users').doc(user.uid).get();
+      if (mounted) {
+        setState(() {
+          companyNameAr = doc.data()?['companyNameAr'];
+          companyNameEn = doc.data()?['companyNameEn'];
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -15,13 +42,26 @@ class AdminPanelScreen extends StatelessWidget {
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
         title: Text(
-          "admin_panel".tr(),
+          context.locale.languageCode == 'ar' 
+              ? (companyNameAr ?? "loading".tr()) 
+              : (companyNameEn ?? "loading".tr()),
           style: const TextStyle(fontWeight: FontWeight.bold, color: kWhiteColor),
         ),
         centerTitle: true,
         backgroundColor: kSecondaryColor,
         elevation: 0,
         iconTheme: const IconThemeData(color: kWhiteColor),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+              }
+            },
+          )
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -31,70 +71,35 @@ class AdminPanelScreen extends StatelessWidget {
             _buildRealtimeStats(),
             const SizedBox(height: 30),
             Text(
-              "admin_management".tr(),
+              "company_management".tr(),
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor),
             ),
             const SizedBox(height: 15),
-            _buildAdminOption(
+            _buildOption(
               context,
-              title: "manage_trips".tr(),
+              title: "manage_my_trips".tr(),
               subtitle: "manage_trips_desc".tr(),
               icon: Icons.bus_alert_rounded,
               color: Colors.blue,
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const ManageTripsScreen()),
+                  MaterialPageRoute(builder: (context) => ManageTripsScreen(companyName: companyNameEn)),
                 );
               },
             ),
-            _buildAdminOption(
+            _buildOption(
               context,
-              title: "booking_history".tr(),
-              subtitle: "booking_history_desc".tr(),
-              icon: Icons.list_alt_rounded,
-              color: Colors.orange,
-              onTap: () {},
-            ),
-            _buildAdminOption(
-              context,
-              title: "manage_users".tr(),
-              subtitle: "manage_users_desc".tr(),
-              icon: Icons.people_alt_rounded,
-              color: Colors.teal,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const UserManagementScreen()),
-                );
-              },
-            ),
-            _buildAdminOption(
-              context,
-              title: "financial_reports".tr(),
+              title: "my_profits".tr(),
               subtitle: "financial_reports_desc".tr(),
               icon: Icons.analytics_rounded,
               color: kGreenColor,
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const FinancialReportsScreen()),
+                  MaterialPageRoute(builder: (context) => FinancialReportsScreen(companyName: companyNameEn)),
                 );
               },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "general_settings".tr(),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor),
-            ),
-            const SizedBox(height: 15),
-            _buildAdminOption(
-              context,
-              title: "system_alerts".tr(),
-              subtitle: "system_alerts_desc".tr(),
-              icon: Icons.notification_add_rounded,
-              color: Colors.purple,
-              onTap: () {},
             ),
           ],
         ),
@@ -104,42 +109,30 @@ class AdminPanelScreen extends StatelessWidget {
 
   Widget _buildRealtimeStats() {
     return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance.collection('trips').snapshots(),
-      builder: (context, tripsSnapshot) {
-        return StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance.collection('users').snapshots(),
-          builder: (context, usersSnapshot) {
-            return StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('bookings').snapshots(),
-              builder: (context, bookingsSnapshot) {
-                int totalTrips = tripsSnapshot.hasData ? tripsSnapshot.data!.docs.length : 0;
-                int totalUsers = usersSnapshot.hasData ? usersSnapshot.data!.docs.length : 0;
-                int todayBookings = bookingsSnapshot.hasData ? bookingsSnapshot.data!.docs.length : 0; // Simplified
-                
-                double totalEarnings = 0;
-                if (bookingsSnapshot.hasData) {
-                  for (var doc in bookingsSnapshot.data!.docs) {
-                    totalEarnings += (doc.data() as Map<String, dynamic>)['totalPrice'] ?? 0.0;
-                  }
-                }
+      stream: FirebaseFirestore.instance
+          .collection('bookings')
+          .where('company', isEqualTo: companyNameEn)
+          .snapshots(),
+      builder: (context, snapshot) {
+        int totalBookings = snapshot.hasData ? snapshot.data!.docs.length : 0;
+        double totalEarnings = 0;
+        if (snapshot.hasData) {
+          for (var doc in snapshot.data!.docs) {
+            totalEarnings += (doc.data() as Map<String, dynamic>)['totalPrice'] ?? 0.0;
+          }
+        }
 
-                return GridView.count(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 15,
-                  mainAxisSpacing: 15,
-                  childAspectRatio: 1.5,
-                  children: [
-                    _buildStatCard("total_trips".tr(), totalTrips.toString(), Icons.directions_bus, Colors.blue),
-                    _buildStatCard("today_bookings".tr(), todayBookings.toString(), Icons.bookmark_added, Colors.orange),
-                    _buildStatCard("total_users".tr(), totalUsers.toString(), Icons.people, Colors.teal),
-                    _buildStatCard("earnings".tr(), "${(totalEarnings / 1000000).toStringAsFixed(1)}M", Icons.payments, kGreenColor),
-                  ],
-                );
-              },
-            );
-          },
+        return GridView.count(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          crossAxisCount: 2,
+          crossAxisSpacing: 15,
+          mainAxisSpacing: 15,
+          childAspectRatio: 1.5,
+          children: [
+            _buildStatCard("total_bookings".tr(), totalBookings.toString(), Icons.bookmark_added, Colors.orange),
+            _buildStatCard("my_earnings".tr(), "${(totalEarnings / 1000).toStringAsFixed(0)}K", Icons.payments, kGreenColor),
+          ],
         );
       },
     );
@@ -167,7 +160,7 @@ class AdminPanelScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildAdminOption(BuildContext context, {
+  Widget _buildOption(BuildContext context, {
     required String title,
     required String subtitle,
     required IconData icon,

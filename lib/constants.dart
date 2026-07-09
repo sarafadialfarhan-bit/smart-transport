@@ -23,3 +23,19 @@ const kDarkGradient = LinearGradient(
   begin: Alignment.topLeft,
   end: Alignment.bottomRight,
 );
+
+ List<String> kSyrianCities = [
+  'damascus',
+  'aleppo',
+  'homs',
+  'hama',
+  'latakia',
+  'tartous',
+  'idlib',
+  'deir_ez_zor',
+  'raaqqa',
+  'hasakah',
+  'daraa',
+  'suwayda',
+  'quneitra'
+];

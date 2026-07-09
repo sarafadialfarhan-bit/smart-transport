@@ -1,7 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../components/custom_text_form_field.dart';
+import '../services/booking_service.dart';
 import 'trips_screen.dart';
 
 class PassengerDataScreen extends StatefulWidget {
@@ -15,8 +18,14 @@ class PassengerDataScreen extends StatefulWidget {
 
 class _PassengerDataScreenState extends State<PassengerDataScreen> {
   final _formKey = GlobalKey<FormState>();
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _mobileController = TextEditingController();
+  final TextEditingController _nationalIdController = TextEditingController();
+  final BookingService _bookingService = BookingService();
+  
   String? selectedSeatPref;
   String? gender;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -105,23 +114,23 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(widget.trip.company, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text(widget.trip.busType, style: const TextStyle(color: kGreyColor, fontSize: 12)),
+                                  Text(widget.trip.company.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                  Text(widget.trip.busType.tr(), style: const TextStyle(color: kGreyColor, fontSize: 12)),
                                 ],
                               ),
                               const Spacer(),
-                              Text(widget.trip.price, style: const TextStyle(color: kGreenColor, fontWeight: FontWeight.bold, fontSize: 18)),
+                              Text("${widget.trip.price.toStringAsFixed(0)} ${"currency".tr()}", style: const TextStyle(color: kGreenColor, fontWeight: FontWeight.bold, fontSize: 18)),
                             ],
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 15),
                             child: Divider(thickness: 1, color: kBackgroundColor),
                           ),
-                          _buildTicketDetail(Icons.location_on_outlined, "${"from".tr()}:", widget.trip.from),
+                          _buildTicketDetail(Icons.location_on_outlined, "${"from".tr()}:", widget.trip.from.tr()),
                           const SizedBox(height: 10),
-                          _buildTicketDetail(Icons.location_on, "${"to".tr()}:", widget.trip.to),
+                          _buildTicketDetail(Icons.location_on, "${"to".tr()}:", widget.trip.to.tr()),
                           const SizedBox(height: 10),
-                          _buildTicketDetail(Icons.access_time, "${"time".tr()}:", widget.trip.time),
+                          _buildTicketDetail(Icons.access_time, "${"time".tr()}:", DateFormat('hh:mm a').format(widget.trip.dateTime)),
                         ],
                       ),
                     ),
@@ -130,6 +139,7 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
 
                     _buildSectionTitle("personal_info".tr()),
                     CustomTextFormField(
+                      controller: _nameController,
                       title: "full_name_id".tr(),
                       icon: Icons.person_outline,
                       validator: (value) {
@@ -142,6 +152,7 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                       children: [
                         Expanded(
                           child: CustomTextFormField(
+                            controller: _mobileController,
                             title: "mobile_number".tr(),
                             icon: Icons.phone_android,
                             keyboardType: TextInputType.phone,
@@ -173,6 +184,7 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                     ),
                     const SizedBox(height: 15),
                     CustomTextFormField(
+                      controller: _nationalIdController,
                       title: "national_id".tr(),
                       icon: Icons.badge_outlined,
                       keyboardType: TextInputType.number,
@@ -201,21 +213,43 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                       width: double.infinity,
                       height: 60,
                       child: ElevatedButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            _showSuccessDialog();
-                          }
-                        },
+                        onPressed: _isLoading
+                            ? null
+                            : () async {
+                                if (_formKey.currentState!.validate()) {
+                                  setState(() => _isLoading = true);
+                                  try {
+                                    await _bookingService.createBooking(
+                                      uid: FirebaseAuth.instance.currentUser!.uid,
+                                      trip: widget.trip,
+                                      passengerName: _nameController.text.trim(),
+                                      mobile: _mobileController.text.trim(),
+                                      nationalId: _nationalIdController.text.trim(),
+                                      gender: gender!,
+                                      seatPref: selectedSeatPref!,
+                                    );
+                                    _showSuccessDialog();
+                                  } catch (e) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                                    );
+                                  } finally {
+                                    setState(() => _isLoading = false);
+                                  }
+                                }
+                              },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: kPrimaryColor,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                           elevation: 5,
                           shadowColor: kPrimaryColor.withOpacity(0.4),
                         ),
-                        child: Text(
-                          "confirm_final_booking".tr(),
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kWhiteColor),
-                        ),
+                        child: _isLoading
+                            ? const CircularProgressIndicator(color: kWhiteColor)
+                            : Text(
+                                "confirm_final_booking".tr(),
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kWhiteColor),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 30),

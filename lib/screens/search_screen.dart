@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
 import '../widgets/search_card.dart';
 import '../widgets/popular_route_item.dart';
+import '../services/user_service.dart';
 import 'trips_screen.dart';
 import 'my_trips_screen.dart';
 import 'wallet_screen.dart';
 import 'notifications_screen.dart';
 import 'settings_screen.dart';
+import 'log_in_screen.dart';
+import 'admin_panel_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -21,10 +25,21 @@ class _SearchScreenState extends State<SearchScreen> {
   String? toCity;
   String seatType = 'normal';
   DateTime selectedDate = DateTime.now();
+  String? userRole;
 
-  final List<String> syrianCities = [
-    'damascus', 'aleppo', 'homs', 'hama', 'latakia', 'tartous', 'idlib', 'deir_ez_zor', 'raaqqa', 'hasakah', 'daraa', 'suwayda', 'quneitra'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserRole();
+  }
+
+  void _fetchUserRole() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final role = await UserService().getUserRole(user.uid);
+      if (mounted) setState(() => userRole = role);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,15 +55,16 @@ class _SearchScreenState extends State<SearchScreen> {
         elevation: 0,
         iconTheme: const IconThemeData(color: kWhiteColor),
         actions: [
-          IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-              );
-            },
-            icon: const Icon(Icons.notifications_none_rounded),
-          ),
+          if (FirebaseAuth.instance.currentUser != null)
+            IconButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                );
+              },
+              icon: const Icon(Icons.notifications_none_rounded),
+            ),
         ],
       ),
       drawer: _buildDrawer(),
@@ -100,7 +116,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               value: fromCity,
                               hint: Text("select_departure_city".tr()),
                               isExpanded: true,
-                              items: syrianCities
+                              items: kSyrianCities
                                   .map((city) => DropdownMenuItem(
                                         value: city,
                                         child: Text(city.tr()),
@@ -123,7 +139,7 @@ class _SearchScreenState extends State<SearchScreen> {
                               value: toCity,
                               hint: Text("select_arrival_city".tr()),
                               isExpanded: true,
-                              items: syrianCities
+                              items: kSyrianCities
                                   .where((city) => city != fromCity)
                                   .map((city) => DropdownMenuItem(
                                         value: city,
@@ -312,6 +328,9 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 
   Widget _buildDrawer() {
+    final User? user = FirebaseAuth.instance.currentUser;
+    final bool isLoggedIn = user != null;
+
     return Drawer(
       child: Column(
         children: [
@@ -334,22 +353,31 @@ class _SearchScreenState extends State<SearchScreen> {
                 child: Icon(Icons.person, size: 45, color: kPrimaryColor),
               ),
             ),
-            accountName: Text("smart_traveller".tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            accountEmail: const Text("traveller@example.com"),
+            accountName: Text(
+                isLoggedIn ? (user.displayName ?? "smart_traveller".tr()) : "welcome_msg".tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            accountEmail: Text(isLoggedIn ? (user.email ?? "") : ""),
           ),
           _buildDrawerItem(Icons.search, "search_trips".tr(), () => Navigator.pop(context)),
-          _buildDrawerItem(Icons.airplane_ticket_outlined, "my_bookings".tr(), () {
-            Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const MyTripsScreen()));
-          }),
-          _buildDrawerItem(Icons.account_balance_wallet_outlined, "wallet".tr(), () {
-            Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen()));
-          }),
-          _buildDrawerItem(Icons.notifications_none_rounded, "notifications".tr(), () {
-            Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen()));
-          }),
+          if (isLoggedIn) ...[
+            _buildDrawerItem(Icons.airplane_ticket_outlined, "my_bookings".tr(), () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyTripsScreen()));
+            }),
+            _buildDrawerItem(Icons.account_balance_wallet_outlined, "wallet".tr(), () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen()));
+            }),
+            _buildDrawerItem(Icons.notifications_none_rounded, "notifications".tr(), () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen()));
+            }),
+            if (userRole == 'admin')
+              _buildDrawerItem(Icons.admin_panel_settings_outlined, "admin_panel".tr(), () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminPanelScreen()));
+              }, color: Colors.orangeAccent),
+          ],
           const Divider(height: 30),
           _buildDrawerItem(Icons.settings_outlined, "settings".tr(), () {
             Navigator.pop(context);
@@ -360,7 +388,21 @@ class _SearchScreenState extends State<SearchScreen> {
             _showAboutDialog(context);
           }),
           const Spacer(),
-          _buildDrawerItem(Icons.logout_rounded, "logout".tr(), () => Navigator.of(context).popUntil((route) => route.isFirst), color: Colors.redAccent),
+          if (isLoggedIn)
+            _buildDrawerItem(Icons.logout_rounded, "logout".tr(), () async {
+              await FirebaseAuth.instance.signOut();
+              if (mounted) {
+                setState(() {});
+                Navigator.of(context).popUntil((route) => route.isFirst);
+              }
+            }, color: Colors.redAccent)
+          else
+            _buildDrawerItem(Icons.login_rounded, "login".tr(), () {
+              Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (context) => const LogInScreen())).then((_) {
+                setState(() {});
+              });
+            }, color: kPrimaryColor),
           const SizedBox(height: 20),
         ],
       ),
