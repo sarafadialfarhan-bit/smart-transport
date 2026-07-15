@@ -88,6 +88,7 @@
   "system_overview": "System Overview",
   "total_trips": "Total Trips",
   "today_bookings": "Today's Bookings",
+  "loading": "Loading...",
   "total_users": "Total Users",
   "total_companies": "Total Companies",
   "admin": "Admin",
