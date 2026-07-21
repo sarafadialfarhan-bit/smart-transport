@@ -302,5 +302,9 @@
   "no_buses_yet": "No buses added yet",
   "select_bus": "Select Bus for this trip",
   "please_select_seat": "Please select a seat from the map",
-  "seat_already_booked": "Sorry, this seat was just booked"
+  "seat_already_booked": "Sorry, this seat was just booked",
+  "available_now": "Available Now",
+  "view_all_options": "View All Options",
+  "see_more": "See More",
+  "all_available_trips": "All Available Trips"
 }

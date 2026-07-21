@@ -8,7 +8,7 @@ import '../components/custom_button.dart';
 import '../services/booking_service.dart';
 import '../services/notification_service.dart';
 import '../widgets/seat_map_widget.dart';
-import 'trips_screen.dart';
+import '../models/trip_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PassengerDataScreen extends StatefulWidget {

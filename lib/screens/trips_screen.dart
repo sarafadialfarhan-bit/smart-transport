@@ -4,45 +4,23 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import '../constants.dart';
+import '../models/trip_model.dart';
+import '../widgets/trip_card_widget.dart';
 import 'passenger_data_screen.dart';
 import 'log_in_screen.dart';
 import '../components/skeleton.dart';
 
-class Trip {
-  final String id;
-  final String company;
-  final String from;
-  final String to;
-  final DateTime dateTime;
-  final double price;
-  final int availableSeats;
-  final String busType;
-  final double duration;
-
-  Trip({
-    required this.id,
-    required this.company,
-    required this.from,
-    required this.to,
-    required this.dateTime,
-    required this.price,
-    required this.availableSeats,
-    required this.busType,
-    required this.duration,
-  });
-}
-
 class TripsScreen extends StatefulWidget {
   final String fromCity;
   final String toCity;
-  final DateTime date;
+  final DateTime? date;
   final String seatType;
 
   const TripsScreen({
     super.key,
     required this.fromCity,
     required this.toCity,
-    required this.date,
+    this.date,
     required this.seatType,
   });
 
@@ -73,12 +51,7 @@ class _TripsScreenState extends State<TripsScreen> {
           _buildFilterBar(),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('trips')
-                  .where('from', isEqualTo: widget.fromCity)
-                  .where('to', isEqualTo: widget.toCity)
-                  .where('status', isEqualTo: 'active')
-                  .snapshots(),
+              stream: _buildQuery().snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) return Center(child: Text("Error: ${snapshot.error}"));
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -104,11 +77,13 @@ class _TripsScreenState extends State<TripsScreen> {
                   );
                 }).toList();
 
-                trips = trips.where((t) => 
-                  t.dateTime.year == widget.date.year &&
-                  t.dateTime.month == widget.date.month &&
-                  t.dateTime.day == widget.date.day
-                ).toList();
+                if (widget.date != null) {
+                  trips = trips.where((t) => 
+                    t.dateTime.year == widget.date!.year &&
+                    t.dateTime.month == widget.date!.month &&
+                    t.dateTime.day == widget.date!.day
+                  ).toList();
+                }
 
                 _applyFilterLogic(trips);
 
@@ -118,7 +93,10 @@ class _TripsScreenState extends State<TripsScreen> {
                   padding: const EdgeInsets.fromLTRB(16, 5, 16, 16),
                   itemCount: trips.length,
                   itemBuilder: (context, index) {
-                    return _buildTripCard(trips[index]);
+                    return TripCardWidget(
+                      trip: trips[index],
+                      onAction: () => _confirmBooking(trips[index]),
+                    );
                   },
                 );
               },
@@ -127,6 +105,17 @@ class _TripsScreenState extends State<TripsScreen> {
         ],
       ),
     );
+  }
+
+  Query _buildQuery() {
+    Query query = FirebaseFirestore.instance.collection('trips').where('status', isEqualTo: 'active');
+    if (widget.fromCity.isNotEmpty) {
+      query = query.where('from', isEqualTo: widget.fromCity);
+    }
+    if (widget.toCity.isNotEmpty) {
+      query = query.where('to', isEqualTo: widget.toCity);
+    }
+    return query;
   }
 
   void _applyFilterLogic(List<Trip> trips) {
@@ -153,6 +142,10 @@ class _TripsScreenState extends State<TripsScreen> {
   }
 
   Widget _buildSearchSummary() {
+    String routeTitle = widget.fromCity.isNotEmpty && widget.toCity.isNotEmpty
+        ? "${widget.fromCity.tr()} ← ${widget.toCity.tr()}"
+        : "all_available_trips".tr();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       decoration: const BoxDecoration(
@@ -170,7 +163,7 @@ class _TripsScreenState extends State<TripsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${widget.fromCity.tr()} ← ${widget.toCity.tr()}",
+                  routeTitle,
                   style: const TextStyle(
                     color: kWhiteColor,
                     fontWeight: FontWeight.bold,
@@ -180,13 +173,15 @@ class _TripsScreenState extends State<TripsScreen> {
                 const SizedBox(height: 5),
                 Row(
                   children: [
-                    const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
-                    const SizedBox(width: 5),
-                    Text(
-                      DateFormat('yyyy/MM/dd').format(widget.date),
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                    const SizedBox(width: 15),
+                    if (widget.date != null) ...[
+                      const Icon(Icons.calendar_today, color: Colors.white70, size: 14),
+                      const SizedBox(width: 5),
+                      Text(
+                        DateFormat('yyyy/MM/dd').format(widget.date!),
+                        style: const TextStyle(color: Colors.white70, fontSize: 13),
+                      ),
+                      const SizedBox(width: 15),
+                    ],
                     const Icon(Icons.airline_seat_recline_normal, color: Colors.white70, size: 14),
                     const SizedBox(width: 5),
                     Text(
@@ -261,177 +256,6 @@ class _TripsScreenState extends State<TripsScreen> {
           Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade300),
           const SizedBox(height: 15),
           Text("no_trips_available".tr(), style: const TextStyle(color: kGreyColor, fontSize: 16)),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTripCard(Trip trip) {
-    bool isFull = trip.availableSeats == 0;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 20),
-      decoration: BoxDecoration(
-        color: kWhiteColor,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 15,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            color: kPrimaryColor.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Icon(Icons.directions_bus, color: kPrimaryColor),
-                        ),
-                        const SizedBox(width: 12),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              trip.company.tr(),
-                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
-                            ),
-                            Text(
-                              trip.busType.toLowerCase() == "vip" 
-                                  ? "VIP - ${"very_comfortable".tr()}" 
-                                  : "${"normal".tr()} - ${"air_conditioned".tr()}",
-                              style: const TextStyle(color: kGreyColor, fontSize: 12),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Text(
-                      "${trip.price.toStringAsFixed(0)} ${"currency".tr()}",
-                      style: const TextStyle(
-                        color: kGreenColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 19,
-                      ),
-                    ),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 15),
-                  child: Divider(thickness: 1, height: 1),
-                ),
-                Row(
-                  children: [
-                    Column(
-                      children: [
-                        const Icon(Icons.radio_button_checked, size: 16, color: kPrimaryColor),
-                        Container(width: 1.5, height: 40, color: Colors.grey.shade300),
-                        const Icon(Icons.location_on, size: 18, color: Colors.redAccent),
-                      ],
-                    ),
-                    const SizedBox(width: 15),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                DateFormat('hh:mm a').format(trip.dateTime),
-                                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                              ),
-                              Text(
-                                trip.from.tr(),
-                                style: const TextStyle(color: kSecondaryColor, fontWeight: FontWeight.w500),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "trip_duration".tr(args: ["${trip.duration} ${"hours".tr()}"]),
-                            style: const TextStyle(color: kGreyColor, fontSize: 12),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "approx_arrival".tr(),
-                                style: const TextStyle(fontWeight: FontWeight.w500, color: kGreyColor, fontSize: 14),
-                              ),
-                              Text(
-                                trip.to.tr(),
-                                style: const TextStyle(color: kSecondaryColor, fontWeight: FontWeight.w500),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: isFull ? Colors.grey.shade50 : kPrimaryColor.withOpacity(0.03),
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
-              ),
-              border: Border(top: BorderSide(color: Colors.grey.shade100)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      isFull ? Icons.block : Icons.event_seat,
-                      size: 18,
-                      color: isFull ? Colors.red : kGreenColor,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      isFull ? "full".tr() : "${"seats".tr()}: ${trip.availableSeats}",
-                      style: TextStyle(
-                        color: isFull ? Colors.red : kGreenColor,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 13,
-                      ),
-                    ),
-                  ],
-                ),
-                ElevatedButton(
-                  onPressed: isFull ? null : () => _confirmBooking(trip),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: kPrimaryColor,
-                    foregroundColor: kWhiteColor,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                  ),
-                  child: Text("confirm".tr()),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );

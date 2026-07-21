@@ -1,9 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../constants.dart';
 import '../widgets/search_card.dart';
 import '../widgets/popular_route_item.dart';
+import '../widgets/trip_card_widget.dart';
+import '../models/trip_model.dart';
 import '../services/user_service.dart';
 import '../services/auth_service.dart';
 import 'trips_screen.dart';
@@ -50,7 +53,10 @@ class _SearchScreenState extends State<SearchScreen> {
       appBar: AppBar(
         title: Text(
           "app_title".tr(),
-          style: const TextStyle(fontWeight: FontWeight.bold, color: kWhiteColor),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: kWhiteColor,
+          ),
         ),
         backgroundColor: kPrimaryColor,
         centerTitle: true,
@@ -62,7 +68,9 @@ class _SearchScreenState extends State<SearchScreen> {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
+                  ),
                 );
               },
               icon: const Icon(Icons.notifications_none_rounded),
@@ -90,12 +98,19 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Text(
                     "welcome_msg".tr(),
-                    style: const TextStyle(color: kWhiteColor, fontSize: 24, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: kWhiteColor,
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     "where_to".tr(),
-                    style: TextStyle(color: kWhiteColor.withOpacity(0.8), fontSize: 16),
+                    style: TextStyle(
+                      color: kWhiteColor.withOpacity(0.8),
+                      fontSize: 16,
+                    ),
                   ),
                 ],
               ),
@@ -119,10 +134,12 @@ class _SearchScreenState extends State<SearchScreen> {
                               hint: Text("select_departure_city".tr()),
                               isExpanded: true,
                               items: kSyrianCities
-                                  .map((city) => DropdownMenuItem(
-                                        value: city,
-                                        child: Text(city.tr()),
-                                      ))
+                                  .map(
+                                    (city) => DropdownMenuItem(
+                                      value: city,
+                                      child: Text(city.tr()),
+                                    ),
+                                  )
                                   .toList(),
                               onChanged: (val) {
                                 setState(() {
@@ -130,7 +147,9 @@ class _SearchScreenState extends State<SearchScreen> {
                                   if (toCity == fromCity) toCity = null;
                                 });
                               },
-                              decoration: const InputDecoration(border: InputBorder.none),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 15),
@@ -143,13 +162,17 @@ class _SearchScreenState extends State<SearchScreen> {
                               isExpanded: true,
                               items: kSyrianCities
                                   .where((city) => city != fromCity)
-                                  .map((city) => DropdownMenuItem(
-                                        value: city,
-                                        child: Text(city.tr()),
-                                      ))
+                                  .map(
+                                    (city) => DropdownMenuItem(
+                                      value: city,
+                                      child: Text(city.tr()),
+                                    ),
+                                  )
                                   .toList(),
                               onChanged: (val) => setState(() => toCity = val),
-                              decoration: const InputDecoration(border: InputBorder.none),
+                              decoration: const InputDecoration(
+                                border: InputBorder.none,
+                              ),
                             ),
                           ),
                         ],
@@ -174,9 +197,14 @@ class _SearchScreenState extends State<SearchScreen> {
                             decoration: const BoxDecoration(
                               color: kWhiteColor,
                               shape: BoxShape.circle,
-                              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 5)],
+                              boxShadow: [
+                                BoxShadow(color: Colors.black12, blurRadius: 5),
+                              ],
                             ),
-                            child: const Icon(Icons.swap_vert, color: kPrimaryColor),
+                            child: const Icon(
+                              Icons.swap_vert,
+                              color: kPrimaryColor,
+                            ),
                           ),
                         ),
                       ),
@@ -197,15 +225,21 @@ class _SearchScreenState extends State<SearchScreen> {
                                 context: context,
                                 initialDate: selectedDate,
                                 firstDate: DateTime.now(),
-                                lastDate: DateTime.now().add(const Duration(days: 90)),
+                                lastDate: DateTime.now().add(
+                                  const Duration(days: 90),
+                                ),
                               );
-                              if (picked != null) setState(() => selectedDate = picked);
+                              if (picked != null)
+                                setState(() => selectedDate = picked);
                             },
                             child: Padding(
                               padding: const EdgeInsets.symmetric(vertical: 12),
                               child: Text(
                                 "${selectedDate.year}/${selectedDate.month}/${selectedDate.day}",
-                                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
@@ -220,11 +254,31 @@ class _SearchScreenState extends State<SearchScreen> {
                             value: seatType,
                             isExpanded: true,
                             items: [
-                              DropdownMenuItem(value: 'normal', child: Text("normal".tr(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))),
-                              DropdownMenuItem(value: 'VIP', child: Text("vip".tr(), style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold))),
+                              DropdownMenuItem(
+                                value: 'normal',
+                                child: Text(
+                                  "normal".tr(),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'VIP',
+                                child: Text(
+                                  "vip".tr(),
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                             ],
                             onChanged: (val) => setState(() => seatType = val!),
-                            decoration: const InputDecoration(border: InputBorder.none),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                            ),
                           ),
                         ),
                       ),
@@ -240,7 +294,9 @@ class _SearchScreenState extends State<SearchScreen> {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: kPrimaryColor,
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                         elevation: 3,
                       ),
                       onPressed: () {
@@ -267,7 +323,11 @@ class _SearchScreenState extends State<SearchScreen> {
                       },
                       child: Text(
                         "search_button".tr(),
-                        style: const TextStyle(fontSize: 18, color: kWhiteColor, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          color: kWhiteColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
@@ -277,12 +337,113 @@ class _SearchScreenState extends State<SearchScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        "popular_routes".tr(),
+                        "available_now".tr(),
                         style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
                       ),
                       TextButton(
+                        onPressed: () {
+                          // تصفية كافة الرحلات النشطة
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const TripsScreen(
+                                fromCity: '', 
+                                toCity: '',
+                                date: null,
+                                seatType: 'normal',
+                              ),
+                            ),
+                          );
+                        },
+                        child: Text("see_more".tr(), style: const TextStyle(color: kPrimaryColor)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 15),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: FirebaseFirestore.instance
+                        .collection('trips')
+                        .where('status', isEqualTo: 'active')
+                        .limit(3)
+                        .snapshots(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData)
+                        return const Center(child: CircularProgressIndicator());
+                      final docs = snapshot.data!.docs;
+
+                      if (docs.isEmpty) return const SizedBox();
+
+                      return Column(
+                        children: docs.map((doc) {
+                          final data = doc.data() as Map<String, dynamic>;
+                          final trip = Trip(
+                            id: doc.id,
+                            company: data['company'] ?? '',
+                            from: data['from'] ?? '',
+                            to: data['to'] ?? '',
+                            dateTime: (data['dateTime'] as Timestamp).toDate(),
+                            price: (data['priceNormal'] ?? 0.0).toDouble(),
+                            availableSeats:
+                                (data['totalSeats'] ?? 0) -
+                                (data['bookedSeats'] ?? 0),
+                            busType: 'normal',
+                            duration: (data['duration'] ?? 4.0).toDouble(),
+                          );
+
+                          return TripCardWidget(
+                            trip: trip,
+                            showPrice: false,
+                            actionLabel: "view_all_options".tr(),
+                            onCardTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TripsScreen(
+                                    fromCity: trip.from,
+                                    toCity: trip.to,
+                                    date: trip.dateTime,
+                                    seatType: 'normal',
+                                  ),
+                                ),
+                              );
+                            },
+                            onAction: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => TripsScreen(
+                                    fromCity: trip.from,
+                                    toCity: trip.to,
+                                    date: trip.dateTime,
+                                    seatType: 'normal',
+                                  ),
+                                ),
+                              );
+                            },
+                          );
+                        }).toList(),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "popular_routes".tr(),
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: kSecondaryColor,
+                        ),
+                      ),
+                      TextButton(
                         onPressed: () {},
-                        child: Text("view_all".tr(), style: const TextStyle(color: kPrimaryColor)),
+                        child: Text(
+                          "view_all".tr(),
+                          style: const TextStyle(color: kPrimaryColor),
+                        ),
                       ),
                     ],
                   ),
@@ -291,19 +452,16 @@ class _SearchScreenState extends State<SearchScreen> {
                   PopularRouteItem(
                     from: "aleppo",
                     to: "damascus",
-                    price: "45,000 ${"currency".tr()}",
                     onTap: () => _quickSearch("aleppo", "damascus"),
                   ),
                   PopularRouteItem(
                     from: "homs",
                     to: "latakia",
-                    price: "25,000 ${"currency".tr()}",
                     onTap: () => _quickSearch("homs", "latakia"),
                   ),
                   PopularRouteItem(
                     from: "damascus",
                     to: "tartous",
-                    price: "35,000 ${"currency".tr()}",
                     onTap: () => _quickSearch("damascus", "tartous"),
                   ),
                 ],
@@ -356,39 +514,94 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
             ),
             accountName: Text(
-                isLoggedIn ? (user.displayName ?? "smart_traveller".tr()) : "welcome_msg".tr(),
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              isLoggedIn
+                  ? (user.displayName ?? "smart_traveller".tr())
+                  : "welcome_msg".tr(),
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
             accountEmail: Text(isLoggedIn ? (user.email ?? "") : ""),
           ),
-          _buildDrawerItem(Icons.search, "search_trips".tr(), () => Navigator.pop(context)),
+          _buildDrawerItem(
+            Icons.search,
+            "search_trips".tr(),
+            () => Navigator.pop(context),
+          ),
           if (isLoggedIn) ...[
-            _buildDrawerItem(Icons.airplane_ticket_outlined, "my_bookings".tr(), () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const MyTripsScreen()));
-            }),
-            _buildDrawerItem(Icons.account_balance_wallet_outlined, "wallet".tr(), () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const WalletScreen()));
-            }),
-            _buildDrawerItem(Icons.notifications_none_rounded, "notifications".tr(), () {
-              Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen()));
-            }),
+            _buildDrawerItem(
+              Icons.airplane_ticket_outlined,
+              "my_bookings".tr(),
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const MyTripsScreen(),
+                  ),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              Icons.account_balance_wallet_outlined,
+              "wallet".tr(),
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const WalletScreen()),
+                );
+              },
+            ),
+            _buildDrawerItem(
+              Icons.notifications_none_rounded,
+              "notifications".tr(),
+              () {
+                Navigator.pop(context);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationsScreen(),
+                  ),
+                );
+              },
+            ),
             if (userRole == 'admin')
-              _buildDrawerItem(Icons.admin_panel_settings_outlined, "admin_panel".tr(), () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminPanelScreen()));
-              }, color: Colors.orangeAccent),
+              _buildDrawerItem(
+                Icons.admin_panel_settings_outlined,
+                "admin_panel".tr(),
+                () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AdminPanelScreen(),
+                    ),
+                  );
+                },
+                color: Colors.orangeAccent,
+              ),
             if (userRole == 'supervisor')
-              _buildDrawerItem(Icons.assignment_ind_outlined, "assigned_trips".tr(), () {
-                Navigator.pop(context);
-                Navigator.push(context, MaterialPageRoute(builder: (context) => const SupervisorTripsScreen()));
-              }, color: Colors.blueAccent),
+              _buildDrawerItem(
+                Icons.assignment_ind_outlined,
+                "assigned_trips".tr(),
+                () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SupervisorTripsScreen(),
+                    ),
+                  );
+                },
+                color: Colors.blueAccent,
+              ),
           ],
           const Divider(height: 30),
           _buildDrawerItem(Icons.settings_outlined, "settings".tr(), () {
             Navigator.pop(context);
-            Navigator.push(context, MaterialPageRoute(builder: (context) => const SettingsScreen()));
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsScreen()),
+            );
           }),
           _buildDrawerItem(Icons.info_outline, "about_app".tr(), () {
             Navigator.pop(context);
@@ -396,11 +609,19 @@ class _SearchScreenState extends State<SearchScreen> {
           }),
           const Spacer(),
           if (isLoggedIn)
-            _buildDrawerItem(Icons.logout_rounded, "logout".tr(), () => AuthService().signOutAndNavigate(context), color: Colors.redAccent)
+            _buildDrawerItem(
+              Icons.logout_rounded,
+              "logout".tr(),
+              () => AuthService().signOutAndNavigate(context),
+              color: Colors.redAccent,
+            )
           else
             _buildDrawerItem(Icons.login_rounded, "login".tr(), () {
               Navigator.pop(context);
-              Navigator.push(context, MaterialPageRoute(builder: (context) => const LogInScreen())).then((_) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LogInScreen()),
+              ).then((_) {
                 setState(() {});
               });
             }, color: kPrimaryColor),
@@ -414,7 +635,13 @@ class _SearchScreenState extends State<SearchScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("about_app".tr(), style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryColor)),
+        title: Text(
+          "about_app".tr(),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: kPrimaryColor,
+          ),
+        ),
         content: Text("about_content".tr() + "\n\n" + "app_version".tr()),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         actions: [
@@ -427,7 +654,12 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  Widget _buildDrawerItem(IconData icon, String title, VoidCallback onTap, {Color? color}) {
+  Widget _buildDrawerItem(
+    IconData icon,
+    String title,
+    VoidCallback onTap, {
+    Color? color,
+  }) {
     return ListTile(
       leading: Icon(icon, color: color ?? kPrimaryColor),
       title: Text(

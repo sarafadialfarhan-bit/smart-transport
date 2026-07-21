@@ -5,14 +5,12 @@ import '../constants.dart';
 class PopularRouteItem extends StatelessWidget {
   final String from;
   final String to;
-  final String price;
   final VoidCallback? onTap;
 
   const PopularRouteItem({
     super.key,
     required this.from,
     required this.to,
-    required this.price,
     this.onTap,
   });
 
@@ -40,13 +38,6 @@ class PopularRouteItem extends StatelessWidget {
           ),
           title: Text("$from ← $to", style: const TextStyle(fontWeight: FontWeight.bold)),
           subtitle: Text("instant_booking_available".tr()),
-          trailing: Text(
-            price,
-            style: const TextStyle(
-              color: kGreenColor,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
         ),
       ),
     );

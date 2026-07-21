@@ -308,5 +308,9 @@
   "no_buses_yet": "لم يتم إضافة باصات بعد",
   "select_bus": "اختر الباص لهذه الرحلة",
   "please_select_seat": "يرجى اختيار مقعد من الخريطة",
-  "seat_already_booked": "عذراً، هذا المقعد تم حجزه للتو"
+  "seat_already_booked": "عذراً، هذا المقعد تم حجزه للتو",
+  "available_now": "متاح الآن",
+  "view_all_options": "عرض كافة الخيارات",
+  "see_more": "عرض المزيد",
+  "all_available_trips": "كافة الرحلات المتاحة"
 }
