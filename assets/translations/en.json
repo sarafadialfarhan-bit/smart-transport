@@ -269,6 +269,10 @@
   "add_user": "Add User",
   "add_new_user": "Add New System User",
   "user_created_success": "User account created successfully",
+  "manage_supervisors": "Manage Supervisors",
+  "manage_supervisors_desc": "Add and manage trip supervisor accounts for your company",
+  "add_supervisor": "Add Supervisor",
+  "add_new_supervisor": "Add New Trip Supervisor",
   "promote_to_supervisor": "Promote to Supervisor",
   "demote_to_user": "Demote to Passenger"
 }

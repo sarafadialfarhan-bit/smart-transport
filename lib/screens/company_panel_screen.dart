@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:smart_transport/screens/user_management_screen.dart';
 import '../constants.dart';
 import 'manage_trips_screen.dart';
 import 'financial_reports_screen.dart';
@@ -82,10 +83,30 @@ class _CompanyPanelScreenState extends State<CompanyPanelScreen> {
               icon: Icons.bus_alert_rounded,
               color: Colors.blue,
               onTap: () {
+                final user = FirebaseAuth.instance.currentUser;
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ManageTripsScreen(companyName: companyNameEn)),
+                  MaterialPageRoute(builder: (context) => ManageTripsScreen(
+                    companyName: companyNameEn,
+                    companyId: user?.uid,
+                  )),
                 );
+              },
+            ),
+            _buildOption(
+              context,
+              title: "manage_supervisors".tr(),
+              subtitle: "manage_supervisors_desc".tr(),
+              icon: Icons.assignment_ind_rounded,
+              color: Colors.deepPurple,
+              onTap: () {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => UserManagementScreen(companyId: user.uid)),
+                  );
+                }
               },
             ),
             _buildOption(

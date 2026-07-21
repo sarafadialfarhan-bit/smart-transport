@@ -32,7 +32,11 @@ class TripService {
     await _db.collection('trips').doc(id).delete();
   }
 
-  Stream<QuerySnapshot> getSupervisors() {
-    return _db.collection('users').where('role', isEqualTo: 'supervisor').snapshots();
+  Stream<QuerySnapshot> getSupervisors(String? companyId) {
+    var query = _db.collection('users').where('role', isEqualTo: 'supervisor');
+    if (companyId != null) {
+      query = query.where('companyId', isEqualTo: companyId);
+    }
+    return query.snapshots();
   }
 }

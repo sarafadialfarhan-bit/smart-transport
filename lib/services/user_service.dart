@@ -37,12 +37,14 @@ class UserService {
   Future<void> createSupervisorProfile(String uid, {
     required String email,
     required String name,
+    required String companyId,
   }) async {
     await _db.collection('users').doc(uid).set({
       'uid': uid,
       'email': email,
       'name': name,
       'role': 'supervisor',
+      'companyId': companyId,
       'status': 'active',
       'createdAt': FieldValue.serverTimestamp(),
     });

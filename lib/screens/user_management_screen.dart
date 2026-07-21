@@ -8,7 +8,8 @@ import '../services/user_service.dart';
 import '../components/skeleton.dart';
 
 class UserManagementScreen extends StatefulWidget {
-  const UserManagementScreen({super.key});
+  final String? companyId;
+  const UserManagementScreen({super.key, this.companyId});
 
   @override
   State<UserManagementScreen> createState() => _UserManagementScreenState();
@@ -28,7 +29,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       backgroundColor: kBackgroundColor,
       appBar: AppBar(
         title: Text(
-          "manage_users".tr(),
+          widget.companyId == null ? "manage_users".tr() : "manage_supervisors".tr(),
           style: const TextStyle(fontWeight: FontWeight.bold, color: kWhiteColor),
         ),
         centerTitle: true,
@@ -39,11 +40,16 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddUserDialog(),
         backgroundColor: kPrimaryColor,
-        icon: const Icon(Icons.person_add, color: kWhiteColor),
-        label: Text("add_user".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold)),
+        icon: Icon(widget.companyId == null ? Icons.person_add : Icons.assignment_ind, color: kWhiteColor),
+        label: Text(
+          widget.companyId == null ? "add_company".tr() : "add_supervisor".tr(),
+          style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold),
+        ),
       ),
       body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance.collection('users').snapshots(),
+        stream: widget.companyId == null
+            ? FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'company').snapshots()
+            : FirebaseFirestore.instance.collection('users').where('role', isEqualTo: 'supervisor').where('companyId', isEqualTo: widget.companyId).snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return ListView.builder(
@@ -139,17 +145,17 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           await FirebaseFirestore.instance.collection('users').doc(userId).update({
                             'status': isBlocked ? 'active' : 'blocked'
                           });
-                        } else if (value == 'promote') {
+                        } else if (value == 'promote' && widget.companyId != null) {
                           await _userService.updateUserRole(userId, 'supervisor');
-                        } else if (value == 'demote') {
+                        } else if (value == 'demote' && widget.companyId != null) {
                           await _userService.updateUserRole(userId, 'user');
                         }
                       },
                       itemBuilder: (context) => [
                         PopupMenuItem(value: 'block', child: Text(isBlocked ? "unblock".tr() : "block".tr())),
-                        if (role == 'user')
+                        if (widget.companyId != null && role == 'user')
                           PopupMenuItem(value: 'promote', child: Text("promote_to_supervisor".tr())),
-                        if (role == 'supervisor')
+                        if (widget.companyId != null && role == 'supervisor')
                           PopupMenuItem(value: 'demote', child: Text("demote_to_user".tr())),
                         PopupMenuItem(value: 'delete', child: Text("delete".tr(), style: const TextStyle(color: Colors.red))),
                       ],
@@ -169,7 +175,8 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     _passwordController.clear();
     _nameArController.clear();
     _nameEnController.clear();
-    String selectedRole = 'company';
+    // إذا كان الأدمن (companyId null) فالدور إجباري شركة، وإذا كان صاحب شركة فالدور إجباري مشرف
+    String selectedRole = widget.companyId == null ? 'company' : 'supervisor';
 
     showModalBottomSheet(
       context: context,
@@ -190,24 +197,11 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("add_new_user".tr(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor)),
-                  const SizedBox(height: 20),
-                  DropdownButtonFormField<String>(
-                    value: selectedRole,
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.grey.shade100,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-                    ),
-                    items: [
-                      DropdownMenuItem(value: 'company', child: Text("company".tr())),
-                      DropdownMenuItem(value: 'supervisor', child: Text("supervisor".tr())),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) setModalState(() => selectedRole = val);
-                    },
+                  Text(
+                    widget.companyId == null ? "add_new_company".tr() : "add_new_supervisor".tr(),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor),
                   ),
-                  const SizedBox(height: 15),
+                  const SizedBox(height: 20),
                   _buildTextField("email".tr(), Icons.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
                   const SizedBox(height: 15),
                   _buildTextField("password".tr(), Icons.lock, controller: _passwordController, isPassword: true),
@@ -250,6 +244,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                                 result.user!.uid,
                                 email: _emailController.text.trim(),
                                 name: _nameEnController.text.trim(),
+                                companyId: widget.companyId!,
                               );
                             }
 

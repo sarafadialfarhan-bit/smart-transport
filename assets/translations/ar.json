@@ -275,7 +275,11 @@
   "supervisor": "مشرف رحلة",
   "add_user": "إضافة مستخدم",
   "add_new_user": "إضافة مستخدم جديد للنظام",
-  "user_created_success": "تم إنشاء حساب المستخدم بنجاح",
+  "user_created_success": "تم إنشاء الحساب بنجاح",
+  "manage_supervisors": "إدارة المشرفين",
+  "manage_supervisors_desc": "إضافة وتعديل حسابات مشرفي الرحلات الخاصين بالشركة",
+  "add_supervisor": "إضافة مشرف",
+  "add_new_supervisor": "إضافة مشرف رحلة جديد",
   "promote_to_supervisor": "ترقية لمشرف رحلة",
   "demote_to_user": "تحويل لمسافر عادي"
 }

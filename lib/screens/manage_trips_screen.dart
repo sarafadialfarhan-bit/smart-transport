@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:smart_transport/screens/trip_chat_screen.dart';
 import '../constants.dart';
 import '../services/trip_service.dart';
 import '../services/notification_service.dart';
@@ -8,7 +9,8 @@ import '../components/skeleton.dart';
 
 class ManageTripsScreen extends StatefulWidget {
   final String? companyName;
-  const ManageTripsScreen({super.key, this.companyName});
+  final String? companyId;
+  const ManageTripsScreen({super.key, this.companyName, this.companyId});
 
   @override
   State<ManageTripsScreen> createState() => _ManageTripsScreenState();
@@ -423,7 +425,7 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                   ),
                   const SizedBox(height: 15),
                   StreamBuilder<QuerySnapshot>(
-                    stream: _tripService.getSupervisors(),
+                    stream: _tripService.getSupervisors(widget.companyId),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) return const SizedBox();
                       final supervisors = snapshot.data!.docs;
