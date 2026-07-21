@@ -5,6 +5,7 @@ import '../constants.dart';
 import '../widgets/search_card.dart';
 import '../widgets/popular_route_item.dart';
 import '../services/user_service.dart';
+import '../services/auth_service.dart';
 import 'trips_screen.dart';
 import 'my_trips_screen.dart';
 import 'wallet_screen.dart';
@@ -395,12 +396,7 @@ class _SearchScreenState extends State<SearchScreen> {
           }),
           const Spacer(),
           if (isLoggedIn)
-            _buildDrawerItem(Icons.logout_rounded, "logout".tr(), () async {
-              await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
-              }
-            }, color: Colors.redAccent)
+            _buildDrawerItem(Icons.logout_rounded, "logout".tr(), () => AuthService().signOutAndNavigate(context), color: Colors.redAccent)
           else
             _buildDrawerItem(Icons.login_rounded, "login".tr(), () {
               Navigator.pop(context);

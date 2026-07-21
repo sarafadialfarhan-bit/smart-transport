@@ -26,12 +26,7 @@ class AdminPanelScreen extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout_rounded),
-            onPressed: () async {
-              await AuthService().signOut();
-              if (context.mounted) {
-                Navigator.of(context).popUntil((route) => route.isFirst);
-              }
-            },
+            onPressed: () => AuthService().signOutAndNavigate(context),
           ),
         ],
       ),
@@ -59,46 +54,6 @@ class AdminPanelScreen extends StatelessWidget {
                   MaterialPageRoute(builder: (context) => const UserManagementScreen()),
                 );
               },
-            ),
-            _buildAdminOption(
-              context,
-              title: "manage_all_trips".tr(),
-              subtitle: "manage_trips_desc".tr(),
-              icon: Icons.bus_alert_rounded,
-              color: Colors.blue,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ManageTripsScreen()),
-                );
-              },
-            ),
-            _buildAdminOption(
-              context,
-              title: "financial_reports".tr(),
-              subtitle: "financial_reports_desc".tr(),
-              icon: Icons.analytics_rounded,
-              color: kGreenColor,
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const FinancialReportsScreen()),
-                );
-              },
-            ),
-            const SizedBox(height: 20),
-            Text(
-              "general_settings".tr(),
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor),
-            ),
-            const SizedBox(height: 15),
-            _buildAdminOption(
-              context,
-              title: "system_alerts".tr(),
-              subtitle: "system_alerts_desc".tr(),
-              icon: Icons.notification_add_rounded,
-              color: Colors.purple,
-              onTap: () {},
             ),
           ],
         ),

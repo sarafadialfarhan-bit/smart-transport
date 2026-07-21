@@ -98,7 +98,7 @@
   "total_companies": "إجمالي الشركات",
   "user": "مسافر",
   "admin": "مدير النظام",
-  "company": "شركة نقل",
+  "company_role": "شركة نقل",
   "add_company": "إضافة شركة",
   "add_new_company": "إضافة شركة نقل جديدة",
   "company_name_ar": "اسم الشركة (بالعربية)",

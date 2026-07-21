@@ -132,7 +132,7 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                         ),
                         const SizedBox(height: 5),
                         Text(
-                          role.tr(),
+                          role == 'company' ? "company_role".tr() : role.tr(),
                           style: const TextStyle(color: kGreyColor, fontSize: 12),
                         ),
                       ],

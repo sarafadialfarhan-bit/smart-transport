@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'dart:async';
 import '../constants.dart';
 import '../services/trip_service.dart';
+import '../services/auth_service.dart';
 import 'trip_chat_screen.dart';
 import 'qr_scanner_screen.dart';
 
@@ -73,6 +74,12 @@ class _SupervisorTripsScreenState extends State<SupervisorTripsScreen> {
         title: Text("assigned_trips".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold)),
         backgroundColor: kPrimaryColor,
         iconTheme: const IconThemeData(color: kWhiteColor),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout_rounded),
+            onPressed: () => AuthService().signOutAndNavigate(context),
+          ),
+        ],
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance

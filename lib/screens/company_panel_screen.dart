@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:smart_transport/screens/user_management_screen.dart';
 import '../constants.dart';
+import '../services/auth_service.dart';
 import 'manage_trips_screen.dart';
 import 'financial_reports_screen.dart';
 import 'fleet_management_screen.dart';
@@ -57,12 +58,7 @@ class _CompanyPanelScreenState extends State<CompanyPanelScreen> {
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              if (mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
-              }
-            },
+            onPressed: () => AuthService().signOutAndNavigate(context),
           )
         ],
       ),

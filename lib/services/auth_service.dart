@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/material.dart';
 import 'user_service.dart';
 
 class AuthService {
@@ -7,6 +8,14 @@ class AuthService {
   final UserService _userService = UserService();
 
   User? get currentUser => _auth.currentUser;
+
+  // Unified Sign Out and Navigate
+  Future<void> signOutAndNavigate(BuildContext context) async {
+    await _auth.signOut();
+    if (context.mounted) {
+      Navigator.of(context).pushNamedAndRemoveUntil('/welcome', (route) => false);
+    }
+  }
 
   // Sign Up
   Future<String?> signUp(String email, String password, String name) async {
