@@ -26,7 +26,7 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
   final TextEditingController _mobileController = TextEditingController();
   final TextEditingController _nationalIdController = TextEditingController();
   final BookingService _bookingService = BookingService();
-  
+
   String? selectedSeatNumber;
   String? gender;
   bool _isLoading = false;
@@ -44,7 +44,10 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
       appBar: AppBar(
         title: Text(
           "passenger_data".tr(),
-          style: const TextStyle(fontWeight: FontWeight.bold, color: kWhiteColor),
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: kWhiteColor,
+          ),
         ),
         centerTitle: true,
         backgroundColor: kPrimaryColor,
@@ -70,17 +73,28 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                   const CircleAvatar(
                     radius: 35,
                     backgroundColor: Colors.white24,
-                    child: Icon(Icons.person_add_alt_1, size: 40, color: kWhiteColor),
+                    child: Icon(
+                      Icons.person_add_alt_1,
+                      size: 40,
+                      color: kWhiteColor,
+                    ),
                   ),
                   const SizedBox(height: 15),
                   Text(
                     "confirm_booking_details".tr(),
-                    style: const TextStyle(color: kWhiteColor, fontSize: 22, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      color: kWhiteColor,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 5),
                   Text(
                     "one_step_away".tr(),
-                    style: TextStyle(color: kWhiteColor.withOpacity(0.9), fontSize: 14),
+                    style: TextStyle(
+                      color: kWhiteColor.withOpacity(0.9),
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
@@ -101,7 +115,11 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                         color: kWhiteColor,
                         borderRadius: BorderRadius.circular(20),
                         boxShadow: [
-                          BoxShadow(color: Colors.black.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 10))
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 20,
+                            offset: const Offset(0, 10),
+                          ),
                         ],
                       ),
                       child: Column(
@@ -110,30 +128,70 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                             children: [
                               Container(
                                 padding: const EdgeInsets.all(10),
-                                decoration: BoxDecoration(color: kPrimaryColor.withOpacity(0.1), borderRadius: BorderRadius.circular(10)),
-                                child: const Icon(Icons.directions_bus, color: kPrimaryColor),
+                                decoration: BoxDecoration(
+                                  color: kPrimaryColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.directions_bus,
+                                  color: kPrimaryColor,
+                                ),
                               ),
                               const SizedBox(width: 15),
                               Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(widget.trip.company.tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text(widget.trip.busType.tr(), style: const TextStyle(color: kGreyColor, fontSize: 12)),
+                                  Text(
+                                    widget.trip.company.tr(),
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                  Text(
+                                    widget.trip.busType.tr(),
+                                    style: const TextStyle(
+                                      color: kGreyColor,
+                                      fontSize: 12,
+                                    ),
+                                  ),
                                 ],
                               ),
                               const Spacer(),
-                              Text("${widget.trip.price.toStringAsFixed(0)} ${"currency".tr()}", style: const TextStyle(color: kGreenColor, fontWeight: FontWeight.bold, fontSize: 18)),
+                              Text(
+                                "${widget.trip.price.toStringAsFixed(0)} ${"currency".tr()}",
+                                style: const TextStyle(
+                                  color: kGreenColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
                             ],
                           ),
                           const Padding(
                             padding: EdgeInsets.symmetric(vertical: 15),
-                            child: Divider(thickness: 1, color: kBackgroundColor),
+                            child: Divider(
+                              thickness: 1,
+                              color: kBackgroundColor,
+                            ),
                           ),
-                          _buildTicketDetail(Icons.location_on_outlined, "${"from".tr()}:", widget.trip.from.tr()),
+                          _buildTicketDetail(
+                            Icons.location_on_outlined,
+                            "${"from".tr()}:",
+                            widget.trip.from.tr(),
+                          ),
                           const SizedBox(height: 10),
-                          _buildTicketDetail(Icons.location_on, "${"to".tr()}:", widget.trip.to.tr()),
+                          _buildTicketDetail(
+                            Icons.location_on,
+                            "${"to".tr()}:",
+                            widget.trip.to.tr(),
+                          ),
                           const SizedBox(height: 10),
-                          _buildTicketDetail(Icons.access_time, "${"time".tr()}:", DateFormat('hh:mm a').format(widget.trip.dateTime)),
+                          _buildTicketDetail(
+                            Icons.access_time,
+                            "${"time".tr()}:",
+                            DateFormat('hh:mm a').format(widget.trip.dateTime),
+                          ),
                         ],
                       ),
                     ),
@@ -146,7 +204,8 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                       title: "full_name_id".tr(),
                       icon: Icons.person_outline,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "enter_name_error".tr();
+                        if (value == null || value.isEmpty)
+                          return "enter_name_error".tr();
                         return null;
                       },
                     ),
@@ -160,25 +219,37 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                             icon: Icons.phone_android,
                             keyboardType: TextInputType.phone,
                             validator: (value) {
-                              if (value == null || value.isEmpty) return "enter_mobile_error".tr();
+                              if (value == null || value.isEmpty)
+                                return "enter_mobile_error".tr();
                               return null;
                             },
                           ),
                         ),
                         const SizedBox(width: 10),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
                             color: kWhiteColor,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: kPrimaryColor.withOpacity(0.3)),
+                            border: Border.all(
+                              color: kPrimaryColor.withOpacity(0.3),
+                            ),
                           ),
                           child: DropdownButton<String>(
                             value: gender,
                             underline: const SizedBox(),
                             items: [
-                              DropdownMenuItem(value: "male", child: Text("male".tr())),
-                              DropdownMenuItem(value: "female", child: Text("female".tr())),
+                              DropdownMenuItem(
+                                value: "male",
+                                child: Text("male".tr()),
+                              ),
+                              DropdownMenuItem(
+                                value: "female",
+                                child: Text("female".tr()),
+                              ),
                             ],
                             onChanged: (val) => setState(() => gender = val),
                           ),
@@ -192,8 +263,10 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                       icon: Icons.badge_outlined,
                       keyboardType: TextInputType.number,
                       validator: (value) {
-                        if (value == null || value.isEmpty) return "enter_national_id_error".tr();
-                        if (value.length != 11) return "national_id_length_error".tr();
+                        if (value == null || value.isEmpty)
+                          return "enter_national_id_error".tr();
+                        if (value.length != 11)
+                          return "national_id_length_error".tr();
                         return null;
                       },
                     ),
@@ -202,11 +275,17 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
 
                     _buildSectionTitle("seating_preferences".tr()),
                     StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance.collection('trips').doc(widget.trip.id).snapshots(),
+                      stream: FirebaseFirestore.instance
+                          .collection('trips')
+                          .doc(widget.trip.id)
+                          .snapshots(),
                       builder: (context, snapshot) {
                         if (!snapshot.hasData) return const SizedBox();
-                        final tripData = snapshot.data!.data() as Map<String, dynamic>;
-                        final seats = Map<String, dynamic>.from(tripData['seats'] ?? {});
+                        final tripData =
+                            snapshot.data!.data() as Map<String, dynamic>;
+                        final seats = Map<String, dynamic>.from(
+                          tripData['seats'] ?? {},
+                        );
                         final busType = tripData['busType'] ?? 'standard';
 
                         return SeatMapWidget(
@@ -229,7 +308,9 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                         if (_formKey.currentState!.validate()) {
                           if (selectedSeatNumber == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("please_select_seat".tr())),
+                              SnackBar(
+                                content: Text("please_select_seat".tr()),
+                              ),
                             );
                             return;
                           }
@@ -244,19 +325,24 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                               gender: gender!,
                               seatNumber: selectedSeatNumber!,
                             );
-                            
+
                             // Send booking confirmation notification
                             await NotificationService().sendNotification(
                               userId: FirebaseAuth.instance.currentUser!.uid,
                               title: 'booking_success'.tr(),
-                              body: 'booking_trip_with'.tr(args: [widget.trip.company.tr()]),
+                              body: 'booking_trip_with'.tr(
+                                args: [widget.trip.company.tr()],
+                              ),
                               type: 'alert',
                             );
 
                             _showSuccessDialog();
                           } catch (e) {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
+                              SnackBar(
+                                content: Text(e.toString()),
+                                backgroundColor: Colors.red,
+                              ),
                             );
                           } finally {
                             setState(() => _isLoading = false);
@@ -280,7 +366,11 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
       padding: const EdgeInsets.only(bottom: 15, right: 5),
       child: Text(
         title,
-        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: kSecondaryColor),
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+          color: kSecondaryColor,
+        ),
       ),
     );
   }
@@ -292,38 +382,11 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
         const SizedBox(width: 8),
         Text(label, style: const TextStyle(color: kGreyColor, fontSize: 14)),
         const SizedBox(width: 10),
-        Text(value, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+        Text(
+          value,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
+        ),
       ],
-    );
-  }
-
-  Widget _buildSeatOption(String key, IconData icon) {
-    bool isSelected = selectedSeatPref == key;
-    return GestureDetector(
-      onTap: () => setState(() => selectedSeatPref = key),
-      child: Container(
-        width: MediaQuery.of(context).size.width * 0.28,
-        padding: const EdgeInsets.symmetric(vertical: 15),
-        decoration: BoxDecoration(
-          color: isSelected ? kPrimaryColor : kWhiteColor,
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: isSelected ? kPrimaryColor : kPrimaryColor.withOpacity(0.1)),
-          boxShadow: isSelected ? [BoxShadow(color: kPrimaryColor.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 5))] : [],
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: isSelected ? kWhiteColor : kPrimaryColor, size: 28),
-            const SizedBox(height: 8),
-            Text(
-              key.tr(),
-              style: TextStyle(
-                color: isSelected ? kWhiteColor : kSecondaryColor,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 
@@ -337,17 +400,29 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(height: 10),
-            const Icon(Icons.check_circle_rounded, color: kGreenColor, size: 100),
+            const Icon(
+              Icons.check_circle_rounded,
+              color: kGreenColor,
+              size: 100,
+            ),
             const SizedBox(height: 25),
             Text(
               "booking_success".tr(),
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: kSecondaryColor),
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: kSecondaryColor,
+              ),
             ),
             const SizedBox(height: 15),
             Text(
               "booking_success_msg".tr(),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: kGreyColor, fontSize: 15, height: 1.5),
+              style: const TextStyle(
+                color: kGreyColor,
+                fontSize: 15,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 35),
             SizedBox(
@@ -359,9 +434,18 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: kPrimaryColor,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                 ),
-                child: Text("back_to_home".tr(), style: const TextStyle(color: kWhiteColor, fontSize: 18, fontWeight: FontWeight.bold)),
+                child: Text(
+                  "back_to_home".tr(),
+                  style: const TextStyle(
+                    color: kWhiteColor,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
             ),
             const SizedBox(height: 10),

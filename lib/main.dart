@@ -2,17 +2,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:smart_transport/services/user_service.dart';
 import 'screens/log_in_screen.dart';
 import 'screens/welcome_screen.dart';
 import 'screens/admin_panel_screen.dart';
 import 'screens/company_panel_screen.dart';
 import 'screens/search_screen.dart';
-import 'services/user_service.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await EasyLocalization.ensureInitialized();
+
   runApp(
     EasyLocalization(
       supportedLocales: const [Locale('ar'), Locale('en')],

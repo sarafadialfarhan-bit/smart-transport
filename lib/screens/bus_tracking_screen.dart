@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:latlong2/latlong2.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:latlong2/latlong.dart';
 import '../constants.dart';
 
 class BusTrackingScreen extends StatefulWidget {
@@ -28,15 +28,22 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("${widget.from.tr()} → ${widget.to.tr()}", style: const TextStyle(color: kWhiteColor)),
+        title: Text(
+          "${widget.from.tr()} → ${widget.to.tr()}",
+          style: const TextStyle(color: kWhiteColor),
+        ),
         backgroundColor: kPrimaryColor,
         iconTheme: const IconThemeData(color: kWhiteColor),
       ),
       body: StreamBuilder<DocumentSnapshot>(
-        stream: FirebaseFirestore.instance.collection('trips').doc(widget.tripId).snapshots(),
+        stream: FirebaseFirestore.instance
+            .collection('trips')
+            .doc(widget.tripId)
+            .snapshots(),
         builder: (context, snapshot) {
-          if (!snapshot.hasData) return const Center(child: CircularProgressIndicator());
-          
+          if (!snapshot.hasData)
+            return const Center(child: CircularProgressIndicator());
+
           final data = snapshot.data!.data() as Map<String, dynamic>?;
           if (data == null || data['isLive'] != true) {
             return Center(
@@ -45,7 +52,10 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
                 children: [
                   const Icon(Icons.location_off, size: 60, color: kGreyColor),
                   const SizedBox(height: 15),
-                  Text("tracking_not_available".tr(), style: const TextStyle(color: kGreyColor)),
+                  Text(
+                    "tracking_not_available".tr(),
+                    style: const TextStyle(color: kGreyColor),
+                  ),
                 ],
               ),
             );
@@ -62,10 +72,7 @@ class _BusTrackingScreenState extends State<BusTrackingScreen> {
 
           return FlutterMap(
             mapController: _mapController,
-            options: MapOptions(
-              initialCenter: pos,
-              initialZoom: 14.0,
-            ),
+            options: MapOptions(initialCenter: pos, initialZoom: 14.0),
             children: [
               TileLayer(
                 urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',

@@ -25,7 +25,10 @@ class MyTripsScreen extends StatelessWidget {
         appBar: AppBar(
           title: Text(
             "my_bookings".tr(),
-            style: const TextStyle(fontWeight: FontWeight.bold, color: kWhiteColor),
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: kWhiteColor,
+            ),
           ),
           centerTitle: true,
           backgroundColor: kPrimaryColor,
@@ -35,8 +38,14 @@ class MyTripsScreen extends StatelessWidget {
             indicatorColor: kWhiteColor,
             indicatorWeight: 4,
             indicatorSize: TabBarIndicatorSize.label,
-            labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal, fontSize: 14),
+            labelStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+            ),
+            unselectedLabelStyle: const TextStyle(
+              fontWeight: FontWeight.normal,
+              fontSize: 14,
+            ),
             tabs: [
               Tab(text: "upcoming_trips".tr()),
               Tab(text: "past_trips".tr()),
@@ -48,21 +57,26 @@ class MyTripsScreen extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 25,
+                ),
                 itemCount: 3,
                 itemBuilder: (context, index) => const MyTripSkeleton(),
               );
             }
 
             final bookings = snapshot.data?.docs ?? [];
-            
+
             final upcoming = bookings.where((b) {
               final data = b.data() as Map<String, dynamic>;
-              return data['status'] == 'confirmed' || data['status'] == 'postponed';
+              return data['status'] == 'confirmed' ||
+                  data['status'] == 'postponed';
             }).toList();
             final past = bookings.where((b) {
               final data = b.data() as Map<String, dynamic>;
-              return data['status'] == 'finished' || data['status'] == 'cancelled';
+              return data['status'] == 'finished' ||
+                  data['status'] == 'cancelled';
             }).toList();
 
             return TabBarView(
@@ -85,7 +99,11 @@ class UpcomingTripsList extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (bookings.isEmpty) {
-      return _buildEmptyState(context, "no_upcoming_trips".tr(), Icons.airplane_ticket_outlined);
+      return _buildEmptyState(
+        context,
+        "no_upcoming_trips".tr(),
+        Icons.airplane_ticket_outlined,
+      );
     }
 
     return ListView.builder(
@@ -93,8 +111,9 @@ class UpcomingTripsList extends StatelessWidget {
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         final data = bookings[index].data() as Map<String, dynamic>;
-        final dateTime = (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
-        
+        final dateTime =
+            (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
+
         return _buildTicketCard(context, {
           "id": bookings[index].id,
           "tripId": data['tripId']?.toString() ?? "",
@@ -104,7 +123,8 @@ class UpcomingTripsList extends StatelessWidget {
           "date": DateFormat('yyyy/MM/dd').format(dateTime),
           "time": DateFormat('hh:mm a').format(dateTime),
           "seat": (data['seatPref']?.toString() ?? "").tr(),
-          "price": "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
+          "price":
+              "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
           "status": (data['status']?.toString() ?? "").tr(),
           "busNum": bookings[index].id.substring(0, 6).toUpperCase(),
           "dateTime": dateTime.toIso8601String(),
@@ -129,7 +149,8 @@ class PastTripsList extends StatelessWidget {
       itemCount: bookings.length,
       itemBuilder: (context, index) {
         final data = bookings[index].data() as Map<String, dynamic>;
-        final dateTime = (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
+        final dateTime =
+            (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
 
         return _buildTicketCard(context, {
           "company": data['company']?.toString() ?? "",
@@ -138,7 +159,8 @@ class PastTripsList extends StatelessWidget {
           "date": DateFormat('yyyy/MM/dd').format(dateTime),
           "time": DateFormat('hh:mm a').format(dateTime),
           "seat": (data['seatPref']?.toString() ?? "").tr(),
-          "price": "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
+          "price":
+              "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
           "status": (data['status']?.toString() ?? "").tr(),
           "busNum": bookings[index].id.substring(0, 6).toUpperCase(),
         }, isUpcoming: false);
@@ -163,14 +185,22 @@ Widget _buildEmptyState(BuildContext context, String message, IconData icon) {
         const SizedBox(height: 20),
         Text(
           message,
-          style: const TextStyle(color: kGreyColor, fontSize: 18, fontWeight: FontWeight.w500),
+          style: const TextStyle(
+            color: kGreyColor,
+            fontSize: 18,
+            fontWeight: FontWeight.w500,
+          ),
         ),
       ],
     ),
   );
 }
 
-Widget _buildTicketCard(BuildContext context, Map<String, String> data, {required bool isUpcoming}) {
+Widget _buildTicketCard(
+  BuildContext context,
+  Map<String, String> data, {
+  required bool isUpcoming,
+}) {
   return Container(
     margin: const EdgeInsets.only(bottom: 25),
     decoration: BoxDecoration(
@@ -181,7 +211,7 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
           color: Colors.black.withOpacity(0.08),
           blurRadius: 20,
           offset: const Offset(0, 10),
-        )
+        ),
       ],
     ),
     child: ClipPath(
@@ -199,17 +229,28 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.directions_bus, color: kWhiteColor, size: 22),
+                    const Icon(
+                      Icons.directions_bus,
+                      color: kWhiteColor,
+                      size: 22,
+                    ),
                     const SizedBox(width: 10),
                     Text(
                       data['company']!,
-                      style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold, fontSize: 16),
+                      style: const TextStyle(
+                        color: kWhiteColor,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
                 Text(
                   "${"ticket_number".tr()}: ${data['busNum']}",
-                  style: TextStyle(color: kWhiteColor.withOpacity(0.8), fontSize: 12),
+                  style: TextStyle(
+                    color: kWhiteColor.withOpacity(0.8),
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -221,21 +262,28 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
               children: [
                 Row(
                   children: [
-                    _buildRouteNode(data['from']!, "departure_station".tr(), true),
+                    _buildRouteNode(
+                      data['from']!,
+                      "departure_station".tr(),
+                      true,
+                    ),
                     Expanded(
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
                           Row(
                             children: List.generate(
-                                15,
-                                (index) => Expanded(
-                                      child: Container(
-                                        margin: const EdgeInsets.symmetric(horizontal: 2),
-                                        height: 1,
-                                        color: Colors.grey.shade300,
-                                      ),
-                                    )),
+                              15,
+                              (index) => Expanded(
+                                child: Container(
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 2,
+                                  ),
+                                  height: 1,
+                                  color: Colors.grey.shade300,
+                                ),
+                              ),
+                            ),
                           ),
                           Container(
                             padding: const EdgeInsets.all(5),
@@ -244,12 +292,20 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                               shape: BoxShape.circle,
                               border: Border.all(color: Colors.grey.shade200),
                             ),
-                            child: Icon(Icons.directions_bus_filled, color: isUpcoming ? kPrimaryColor : kGreyColor, size: 18),
+                            child: Icon(
+                              Icons.directions_bus_filled,
+                              color: isUpcoming ? kPrimaryColor : kGreyColor,
+                              size: 18,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    _buildRouteNode(data['to']!, "arrival_destination".tr(), false),
+                    _buildRouteNode(
+                      data['to']!,
+                      "arrival_destination".tr(),
+                      false,
+                    ),
                   ],
                 ),
 
@@ -258,12 +314,24 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildDetailItem("date".tr(), data['date']!, Icons.calendar_today_outlined),
-                    _buildDetailItem("time".tr(), data['time']!, Icons.access_time),
-                    _buildDetailItem("seat".tr(), data['seat']!, Icons.event_seat_outlined),
+                    _buildDetailItem(
+                      "date".tr(),
+                      data['date']!,
+                      Icons.calendar_today_outlined,
+                    ),
+                    _buildDetailItem(
+                      "time".tr(),
+                      data['time']!,
+                      Icons.access_time,
+                    ),
+                    _buildDetailItem(
+                      "seat".tr(),
+                      data['seat']!,
+                      Icons.event_seat_outlined,
+                    ),
                   ],
                 ),
-                
+
                 const Padding(
                   padding: EdgeInsets.symmetric(vertical: 25),
                   child: MySeparator(color: Colors.grey),
@@ -275,12 +343,23 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text("status".tr(), style: const TextStyle(color: kGreyColor, fontSize: 12)),
+                        Text(
+                          "status".tr(),
+                          style: const TextStyle(
+                            color: kGreyColor,
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 5),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: isUpcoming ? kGreenColor.withOpacity(0.1) : kGreyColor.withOpacity(0.1),
+                            color: isUpcoming
+                                ? kGreenColor.withOpacity(0.1)
+                                : kGreyColor.withOpacity(0.1),
                             borderRadius: BorderRadius.circular(10),
                           ),
                           child: Text(
@@ -297,11 +376,21 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text("total_price".tr(), style: const TextStyle(color: kGreyColor, fontSize: 12)),
+                        Text(
+                          "total_price".tr(),
+                          style: const TextStyle(
+                            color: kGreyColor,
+                            fontSize: 12,
+                          ),
+                        ),
                         const SizedBox(height: 5),
                         Text(
                           data['price']!,
-                          style: const TextStyle(fontWeight: FontWeight.bold, color: kSecondaryColor, fontSize: 18),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: kSecondaryColor,
+                            fontSize: 18,
+                          ),
                         ),
                       ],
                     ),
@@ -311,18 +400,37 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                 if (isUpcoming) ...[
                   const SizedBox(height: 25),
                   StreamBuilder<DocumentSnapshot>(
-                    stream: FirebaseFirestore.instance.collection('trips').doc(data['tripId']).snapshots(),
+                    stream: FirebaseFirestore.instance
+                        .collection('trips')
+                        .doc(data['tripId'])
+                        .snapshots(),
                     builder: (context, tripSnapshot) {
-                      bool isStarted = false;
+                      bool isVisible = false;
                       bool isLive = false;
                       double duration = 4.0;
                       if (tripSnapshot.hasData && tripSnapshot.data!.exists) {
-                        final tripData = tripSnapshot.data!.data() as Map<String, dynamic>;
-                        isStarted = tripData['status'] == 'started';
+                        final tripData =
+                            tripSnapshot.data!.data() as Map<String, dynamic>;
                         isLive = tripData['isLive'] ?? false;
                         duration = (tripData['duration'] ?? 4.0).toDouble();
-                        
-                        // ... existing time logic ...
+
+                        final tripDateTime = (tripData['dateTime'] as Timestamp)
+                            .toDate();
+                        final arrivalDateTime = tripDateTime.add(
+                          Duration(minutes: (duration * 60).toInt()),
+                        );
+                        final now = DateTime.now();
+
+                        // يظهر قبل ساعتين من الرحلة ويختفي بعد 24 ساعة من الوصول
+                        final showTime = tripDateTime.subtract(
+                          const Duration(hours: 2),
+                        );
+                        final hideTime = arrivalDateTime.add(
+                          const Duration(hours: 24),
+                        );
+
+                        isVisible =
+                            now.isAfter(showTime) && now.isBefore(hideTime);
                       }
 
                       return Column(
@@ -330,7 +438,7 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                           if (isVisible) ...[
                             Row(
                               children: [
-                                if (isLive) 
+                                if (isLive)
                                   Expanded(
                                     child: SizedBox(
                                       height: 50,
@@ -339,20 +447,34 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                                           Navigator.push(
                                             context,
                                             MaterialPageRoute(
-                                              builder: (context) => BusTrackingScreen(
-                                                tripId: data['tripId']!,
-                                                from: data['from']!,
-                                                to: data['to']!,
-                                              ),
+                                              builder: (context) =>
+                                                  BusTrackingScreen(
+                                                    tripId: data['tripId']!,
+                                                    from: data['from']!,
+                                                    to: data['to']!,
+                                                  ),
                                             ),
                                           );
                                         },
-                                        icon: const Icon(Icons.location_on, size: 20),
-                                        label: Text("track_bus".tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                        icon: const Icon(
+                                          Icons.location_on,
+                                          size: 20,
+                                        ),
+                                        label: Text(
+                                          "track_bus".tr(),
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 13,
+                                          ),
+                                        ),
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: kGreenColor,
                                           foregroundColor: kWhiteColor,
-                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(
+                                              15,
+                                            ),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -367,21 +489,44 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
-                                            builder: (context) => TripChatScreen(
-                                              tripId: data['tripId']!,
-                                              from: data['from']!,
-                                              to: data['to']!,
-                                              arrivalTime: DateTime.parse(data['dateTime']!).add(Duration(minutes: (duration * 60).toInt())),
-                                            ),
+                                            builder: (context) =>
+                                                TripChatScreen(
+                                                  tripId: data['tripId']!,
+                                                  from: data['from']!,
+                                                  to: data['to']!,
+                                                  arrivalTime:
+                                                      DateTime.parse(
+                                                        data['dateTime']!,
+                                                      ).add(
+                                                        Duration(
+                                                          minutes:
+                                                              (duration * 60)
+                                                                  .toInt(),
+                                                        ),
+                                                      ),
+                                                ),
                                           ),
                                         );
                                       },
-                                      icon: const Icon(Icons.chat_bubble_outline, size: 20),
-                                      label: Text("join_chat".tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      icon: const Icon(
+                                        Icons.chat_bubble_outline,
+                                        size: 20,
+                                      ),
+                                      label: Text(
+                                        "join_chat".tr(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 13,
+                                        ),
+                                      ),
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: kSecondaryColor,
                                         foregroundColor: kWhiteColor,
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(
+                                            15,
+                                          ),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -397,18 +542,29 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                                 child: SizedBox(
                                   height: 50,
                                   child: ElevatedButton.icon(
-                              onPressed: () {
-                                _showBoardingPass(context, data);
-                              },
-                              icon: const Icon(Icons.qr_code_scanner, size: 20),
-                              label: Text("boarding_ticket".tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: kPrimaryColor,
-                                foregroundColor: kWhiteColor,
-                                elevation: 0,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                              ),
-                            ),
+                                    onPressed: () {
+                                      _showBoardingPass(context, data);
+                                    },
+                                    icon: const Icon(
+                                      Icons.qr_code_scanner,
+                                      size: 20,
+                                    ),
+                                    label: Text(
+                                      "boarding_ticket".tr(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 13,
+                                      ),
+                                    ),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kPrimaryColor,
+                                      foregroundColor: kWhiteColor,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 10),
@@ -416,13 +572,27 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                                 child: SizedBox(
                                   height: 50,
                                   child: OutlinedButton(
-                                    onPressed: () => _showCancelDialog(context, data['company']!, data['date']!),
+                                    onPressed: () => _showCancelDialog(
+                                      context,
+                                      data['company']!,
+                                      data['date']!,
+                                    ),
                                     style: OutlinedButton.styleFrom(
                                       foregroundColor: Colors.redAccent,
-                                      side: const BorderSide(color: Colors.redAccent, width: 1.5),
-                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                      side: const BorderSide(
+                                        color: Colors.redAccent,
+                                        width: 1.5,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(15),
+                                      ),
                                     ),
-                                    child: Text("cancel".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                    child: Text(
+                                      "cancel".tr(),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -438,13 +608,19 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
                     width: double.infinity,
                     height: 50,
                     child: OutlinedButton.icon(
-                      onPressed: () => _showRatingDialog(context, data['company']!),
+                      onPressed: () =>
+                          _showRatingDialog(context, data['company']!),
                       icon: const Icon(Icons.star_border_rounded, size: 22),
-                      label: Text("rate_trip".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                      label: Text(
+                        "rate_trip".tr(),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: kPrimaryColor,
                         side: const BorderSide(color: kPrimaryColor),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
                       ),
                     ),
                   ),
@@ -467,9 +643,15 @@ void _showBoardingPass(BuildContext context, Map<String, dynamic> data) {
       content: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(data['company'] ?? '', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+          Text(
+            data['company'] ?? '',
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
           const SizedBox(height: 10),
-          Text("${data['from']} → ${data['to']}", style: const TextStyle(color: kGreyColor)),
+          Text(
+            "${data['from']} → ${data['to']}",
+            style: const TextStyle(color: kGreyColor),
+          ),
           const SizedBox(height: 20),
           Container(
             padding: const EdgeInsets.all(15),
@@ -486,9 +668,18 @@ void _showBoardingPass(BuildContext context, Map<String, dynamic> data) {
             ),
           ),
           const SizedBox(height: 20),
-          Text("scan_at_boarding".tr(), style: const TextStyle(fontSize: 12, color: kGreyColor)),
+          Text(
+            "scan_at_boarding".tr(),
+            style: const TextStyle(fontSize: 12, color: kGreyColor),
+          ),
           const SizedBox(height: 10),
-          Text("${"seat".tr()}: ${data['seat']}", style: const TextStyle(fontWeight: FontWeight.bold, color: kPrimaryColor)),
+          Text(
+            "${"seat".tr()}: ${data['seat']}",
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: kPrimaryColor,
+            ),
+          ),
         ],
       ),
       actions: [
@@ -510,7 +701,10 @@ void _showCancelDialog(BuildContext context, String company, String date) {
         children: [
           const Icon(Icons.warning_amber_rounded, color: Colors.redAccent),
           const SizedBox(width: 10),
-          Text("cancel_booking".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(
+            "cancel_booking".tr(),
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ],
       ),
       content: Text("cancel_confirm_msg".tr(args: [company, date])),
@@ -531,9 +725,14 @@ void _showCancelDialog(BuildContext context, String company, String date) {
           },
           style: ElevatedButton.styleFrom(
             backgroundColor: Colors.redAccent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
-          child: Text("confirm_cancel".tr(), style: const TextStyle(color: kWhiteColor)),
+          child: Text(
+            "confirm_cancel".tr(),
+            style: const TextStyle(color: kWhiteColor),
+          ),
         ),
       ],
     ),
@@ -551,23 +750,30 @@ void _showRatingDialog(BuildContext context, String companyName) {
           children: [
             const Icon(Icons.stars_rounded, color: Colors.orange, size: 50),
             const SizedBox(height: 10),
-            Text("rating_title".tr(args: [companyName]),
-                textAlign: TextAlign.center,
-                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text(
+              "rating_title".tr(args: [companyName]),
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            ),
           ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text("rating_msg".tr(),
-                textAlign: TextAlign.center, style: const TextStyle(color: kGreyColor)),
+            Text(
+              "rating_msg".tr(),
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: kGreyColor),
+            ),
             const SizedBox(height: 20),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: List.generate(5, (index) {
                 return IconButton(
                   icon: Icon(
-                    index < selectedStars ? Icons.star_rounded : Icons.star_outline_rounded,
+                    index < selectedStars
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
                     color: Colors.orange,
                     size: 35,
                   ),
@@ -610,10 +816,17 @@ void _showRatingDialog(BuildContext context, String companyName) {
                     },
               style: ElevatedButton.styleFrom(
                 backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: Text("send_rating".tr(),
-                  style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold)),
+              child: Text(
+                "send_rating".tr(),
+                style: const TextStyle(
+                  color: kWhiteColor,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -624,17 +837,20 @@ void _showRatingDialog(BuildContext context, String companyName) {
 
 Widget _buildRouteNode(String city, String label, bool isStart) {
   return Column(
-    crossAxisAlignment: isStart ? CrossAxisAlignment.start : CrossAxisAlignment.end,
+    crossAxisAlignment: isStart
+        ? CrossAxisAlignment.start
+        : CrossAxisAlignment.end,
     children: [
       Text(
         city,
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: kSecondaryColor),
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 20,
+          color: kSecondaryColor,
+        ),
       ),
       const SizedBox(height: 4),
-      Text(
-        label,
-        style: const TextStyle(color: kGreyColor, fontSize: 13),
-      ),
+      Text(label, style: const TextStyle(color: kGreyColor, fontSize: 13)),
     ],
   );
 }
@@ -646,7 +862,14 @@ Widget _buildDetailItem(String label, String value, IconData icon) {
       const SizedBox(height: 8),
       Text(label, style: const TextStyle(color: kGreyColor, fontSize: 12)),
       const SizedBox(height: 4),
-      Text(value, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: kSecondaryColor)),
+      Text(
+        value,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 14,
+          color: kSecondaryColor,
+        ),
+      ),
     ],
   );
 }
@@ -662,8 +885,15 @@ class TicketClipper extends CustomClipper<Path> {
     double cutOutRadius = 15;
     double cutOutPosition = size.height * 0.68;
 
-    path.addOval(Rect.fromCircle(center: Offset(0, cutOutPosition), radius: cutOutRadius));
-    path.addOval(Rect.fromCircle(center: Offset(size.width, cutOutPosition), radius: cutOutRadius));
+    path.addOval(
+      Rect.fromCircle(center: Offset(0, cutOutPosition), radius: cutOutRadius),
+    );
+    path.addOval(
+      Rect.fromCircle(
+        center: Offset(size.width, cutOutPosition),
+        radius: cutOutRadius,
+      ),
+    );
 
     return path;
   }
@@ -720,7 +950,9 @@ class MyTripSkeleton extends StatelessWidget {
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
               color: Colors.grey.shade200,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(25)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(25),
+              ),
             ),
             child: const Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,

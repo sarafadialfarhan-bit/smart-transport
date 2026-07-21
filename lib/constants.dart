@@ -1,3 +1,16 @@
+/* 
+--- PROJECT CREDENTIALS (FOR REFERENCE) ---
+Admin: Admin@Admin.com (Role: admin)
+Companies: 
+  - alqadmous@gmail.com (Role: company)
+  - amir@gmail.com (Role: company)
+Users:
+  - admin@gmail.com (Role: user)
+  - m@gmail.com (Role: user)
+  - j@gmail.com (Role: user)
+------------------------------------------
+*/
+
 import 'package:flutter/material.dart';
 
 // الألوان الأساسية لتطبيق النقل

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants.dart';
 
 class SeatMapWidget extends StatelessWidget {
-  final Map<String, dynamic> seats; // { "1": "available", "2": "occupied", ... }
+  final Map<String, dynamic>
+  seats; // { "1": "available", "2": "occupied", ... }
   final String busType; // standard, vip
   final String? selectedSeat;
   final Function(String) onSeatSelected;
@@ -34,17 +35,34 @@ class SeatMapWidget extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Icon(Icons.steering_wheel, size: 40, color: kGreyColor),
+              const Icon(
+                Icons.person,
+                size: 40,
+                color: kGreyColor,
+              ), // Driver Icon
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-                decoration: BoxDecoration(color: kSecondaryColor, borderRadius: BorderRadius.circular(10)),
-                child: const Text("FRONT", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 15,
+                  vertical: 5,
+                ),
+                decoration: BoxDecoration(
+                  color: kSecondaryColor,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Text(
+                  "FRONT",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 10,
+                  ),
+                ),
               ),
               const SizedBox(width: 40),
             ],
           ),
           const SizedBox(height: 30),
-          
+
           // Seats Grid
           GridView.builder(
             shrinkWrap: true,
@@ -62,7 +80,9 @@ class SeatMapWidget extends StatelessWidget {
               bool isSelected = selectedSeat == seatNum;
 
               return GestureDetector(
-                onTap: status == 'available' ? () => onSeatSelected(seatNum) : null,
+                onTap: status == 'available'
+                    ? () => onSeatSelected(seatNum)
+                    : null,
                 child: Container(
                   decoration: BoxDecoration(
                     color: _getSeatColor(status, isSelected),
@@ -76,7 +96,9 @@ class SeatMapWidget extends StatelessWidget {
                     child: Text(
                       seatNum,
                       style: TextStyle(
-                        color: status == 'occupied' || isSelected ? Colors.white : kSecondaryColor,
+                        color: status == 'occupied' || isSelected
+                            ? Colors.white
+                            : kSecondaryColor,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -85,7 +107,7 @@ class SeatMapWidget extends StatelessWidget {
               );
             },
           ),
-          
+
           const SizedBox(height: 20),
           _buildLegend(),
         ],
@@ -117,7 +139,11 @@ class SeatMapWidget extends StatelessWidget {
         Container(
           width: 15,
           height: 15,
-          decoration: BoxDecoration(color: color, border: Border.all(color: border), borderRadius: BorderRadius.circular(4)),
+          decoration: BoxDecoration(
+            color: color,
+            border: Border.all(color: border),
+            borderRadius: BorderRadius.circular(4),
+          ),
         ),
         const SizedBox(width: 5),
         Text(label, style: const TextStyle(fontSize: 10, color: kGreyColor)),
