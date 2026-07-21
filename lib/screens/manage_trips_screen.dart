@@ -27,6 +27,8 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
 
   String? _fromCity;
   String? _toCity;
+  String? _selectedSupervisorId;
+  String? _selectedSupervisorName;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
 
@@ -261,7 +263,10 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                 itemBuilder: (context) => <PopupMenuEntry<String>>[
                   PopupMenuItem<String>(value: 'postpone', child: Row(children: [const Icon(Icons.history_rounded, size: 20, color: Colors.orange), const SizedBox(width: 8), Text("postpone".tr())])),
                   PopupMenuItem<String>(value: 'cancel_trip', child: Row(children: [const Icon(Icons.cancel_rounded, size: 20, color: Colors.red), const SizedBox(width: 8), Text("cancel_trip".tr())])),
+                  if (status == 'active')
+                    PopupMenuItem<String>(value: 'start_trip', child: Row(children: [const Icon(Icons.play_arrow_rounded, size: 20, color: Colors.green), const SizedBox(width: 8), Text("start_trip".tr())])),
                   const PopupMenuDivider(),
+                  PopupMenuItem<String>(value: 'view_chat', child: Row(children: [const Icon(Icons.chat_outlined, size: 20, color: kPrimaryColor), const SizedBox(width: 8), Text("view_chat".tr())])),
                   PopupMenuItem<String>(value: 'edit', child: Row(children: [const Icon(Icons.edit, size: 20, color: Colors.blue), const SizedBox(width: 8), Text("edit".tr())])),
                   PopupMenuItem<String>(value: 'delete', child: Row(children: [const Icon(Icons.delete_forever, size: 20, color: Colors.red), const SizedBox(width: 8), Text("delete".tr(), style: const TextStyle(color: Colors.red))])),
                 ],
@@ -270,6 +275,25 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                   if (val == 'cancel_trip') _cancelTrip(id, trip['from'] ?? '', trip['to'] ?? '');
                   if (val == 'postpone') _postponeTrip(id, trip['dateTime'] as Timestamp, trip['from'] ?? '', trip['to'] ?? '');
                   if (val == 'edit') _showEditTripDialog(id, trip);
+                  if (val == 'start_trip') {
+                    _tripService.startTrip(id);
+                    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("trip_started".tr())));
+                  }
+                  if (val == 'view_chat') {
+                    final dt = (trip['dateTime'] as Timestamp).toDate();
+                    final duration = (trip['duration'] ?? 4.0).toDouble();
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => TripChatScreen(
+                          tripId: id,
+                          from: trip['from'] ?? '',
+                          to: trip['to'] ?? '',
+                          arrivalTime: dt.add(Duration(minutes: (duration * 60).toInt())),
+                        ),
+                      ),
+                    );
+                  }
                 },
               ),
             ],
@@ -343,6 +367,8 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
     _durationController.clear();
     _fromCity = null;
     _toCity = null;
+    _selectedSupervisorId = null;
+    _selectedSupervisorName = null;
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.now();
 
@@ -357,6 +383,8 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
     _durationController.text = trip['duration']?.toString() ?? '';
     _fromCity = trip['from'];
     _toCity = trip['to'];
+    _selectedSupervisorId = trip['supervisorId'];
+    _selectedSupervisorName = trip['supervisorName'];
     
     DateTime dt = (trip['dateTime'] as Timestamp).toDate();
     _selectedDate = dt;
@@ -392,6 +420,43 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                     Icons.business, 
                     controller: _companyController, 
                     readOnly: widget.companyName != null
+                  ),
+                  const SizedBox(height: 15),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: _tripService.getSupervisors(),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      final supervisors = snapshot.data!.docs;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedSupervisorId,
+                            hint: Text("select_supervisor".tr()),
+                            isExpanded: true,
+                            items: supervisors.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              return DropdownMenuItem(
+                                value: doc.id,
+                                child: Text(data['name'] ?? 'N/A'),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              final supervisor = supervisors.firstWhere((doc) => doc.id == val);
+                              final data = supervisor.data() as Map<String, dynamic>;
+                              setModalState(() {
+                                _selectedSupervisorId = val;
+                                _selectedSupervisorName = data['name'];
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 15),
                   Row(
@@ -473,6 +538,8 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                             'priceVip': double.parse(_priceVipController.text),
                             'totalSeats': int.parse(_totalSeatsController.text),
                             'duration': double.tryParse(_durationController.text) ?? 4.0,
+                            'supervisorId': _selectedSupervisorId,
+                            'supervisorName': _selectedSupervisorName,
                           };
 
                           if (isEdit && tripId != null) {

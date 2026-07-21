@@ -64,6 +64,8 @@ class SmartTransportApp extends StatelessWidget {
                   return const AdminPanelScreen();
                 } else if (role == 'company') {
                   return const CompanyPanelScreen();
+                } else if (role == 'supervisor') {
+                  return const SearchScreen(); // Placeholder or Supervisor screen
                 } else {
                   return const SearchScreen();
                 }

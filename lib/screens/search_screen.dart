@@ -12,6 +12,7 @@ import 'notifications_screen.dart';
 import 'settings_screen.dart';
 import 'log_in_screen.dart';
 import 'admin_panel_screen.dart';
+import 'supervisor_trips_screen.dart';
 
 class SearchScreen extends StatefulWidget {
   const SearchScreen({super.key});
@@ -377,6 +378,11 @@ class _SearchScreenState extends State<SearchScreen> {
                 Navigator.pop(context);
                 Navigator.push(context, MaterialPageRoute(builder: (context) => const AdminPanelScreen()));
               }, color: Colors.orangeAccent),
+            if (userRole == 'supervisor')
+              _buildDrawerItem(Icons.assignment_ind_outlined, "assigned_trips".tr(), () {
+                Navigator.pop(context);
+                Navigator.push(context, MaterialPageRoute(builder: (context) => const SupervisorTripsScreen()));
+              }, color: Colors.blueAccent),
           ],
           const Divider(height: 30),
           _buildDrawerItem(Icons.settings_outlined, "settings".tr(), () {

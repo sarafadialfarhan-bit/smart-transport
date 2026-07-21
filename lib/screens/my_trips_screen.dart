@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../services/booking_service.dart';
 import '../components/skeleton.dart';
+import 'trip_chat_screen.dart';
 
 class MyTripsScreen extends StatelessWidget {
   const MyTripsScreen({super.key});
@@ -92,6 +94,8 @@ class UpcomingTripsList extends StatelessWidget {
         final dateTime = (data['dateTime'] as Timestamp?)?.toDate() ?? DateTime.now();
         
         return _buildTicketCard(context, {
+          "id": bookings[index].id,
+          "tripId": data['tripId']?.toString() ?? "",
           "company": data['company']?.toString() ?? "",
           "from": (data['from']?.toString() ?? "").tr(),
           "to": (data['to']?.toString() ?? "").tr(),
@@ -101,6 +105,7 @@ class UpcomingTripsList extends StatelessWidget {
           "price": "${(data['totalPrice'] ?? 0).toStringAsFixed(0)} ${"currency".tr()}",
           "status": (data['status']?.toString() ?? "").tr(),
           "busNum": bookings[index].id.substring(0, 6).toUpperCase(),
+          "dateTime": dateTime.toIso8601String(),
         }, isUpcoming: true);
       },
     );
@@ -303,41 +308,96 @@ Widget _buildTicketCard(BuildContext context, Map<String, String> data, {require
 
                 if (isUpcoming) ...[
                   const SizedBox(height: 25),
-                  Row(
-                    children: [
-                      Expanded(
-                        flex: 2,
-                        child: SizedBox(
-                          height: 50,
-                          child: ElevatedButton.icon(
-                            onPressed: () {},
-                            icon: const Icon(Icons.qr_code_scanner, size: 20),
-                            label: Text("boarding_ticket".tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: kPrimaryColor,
-                              foregroundColor: kWhiteColor,
-                              elevation: 0,
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  StreamBuilder<DocumentSnapshot>(
+                    stream: FirebaseFirestore.instance.collection('trips').doc(data['tripId']).snapshots(),
+                    builder: (context, tripSnapshot) {
+                      bool isVisible = false;
+                      double duration = 4.0;
+                      if (tripSnapshot.hasData && tripSnapshot.data!.exists) {
+                        final tripData = tripSnapshot.data!.data() as Map<String, dynamic>;
+                        duration = (tripData['duration'] ?? 4.0).toDouble();
+                        
+                        final tripDateTime = (tripData['dateTime'] as Timestamp).toDate();
+                        final arrivalDateTime = tripDateTime.add(Duration(minutes: (duration * 60).toInt()));
+                        final now = DateTime.now();
+                        
+                        // يظهر قبل ساعتين من الرحلة ويختفي بعد 24 ساعة من الوصول
+                        final showTime = tripDateTime.subtract(const Duration(hours: 2));
+                        final hideTime = arrivalDateTime.add(const Duration(hours: 24));
+                        
+                        isVisible = now.isAfter(showTime) && now.isBefore(hideTime);
+                      }
+
+                      return Column(
+                        children: [
+                          if (isVisible) ...[
+                            SizedBox(
+                              width: double.infinity,
+                              height: 50,
+                              child: ElevatedButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => TripChatScreen(
+                                        tripId: data['tripId']!,
+                                        from: data['from']!,
+                                        to: data['to']!,
+                                        arrivalTime: DateTime.parse(data['dateTime']!).add(Duration(minutes: (duration * 60).toInt())),
+                                      ),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.chat_bubble_outline, size: 20),
+                                label: Text("join_trip_chat".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: kSecondaryColor,
+                                  foregroundColor: kWhiteColor,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                ),
+                              ),
                             ),
+                            const SizedBox(height: 10),
+                          ],
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 2,
+                                child: SizedBox(
+                                  height: 50,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {},
+                                    icon: const Icon(Icons.qr_code_scanner, size: 20),
+                                    label: Text("boarding_ticket".tr(), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: kPrimaryColor,
+                                      foregroundColor: kWhiteColor,
+                                      elevation: 0,
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: SizedBox(
+                                  height: 50,
+                                  child: OutlinedButton(
+                                    onPressed: () => _showCancelDialog(context, data['company']!, data['date']!),
+                                    style: OutlinedButton.styleFrom(
+                                      foregroundColor: Colors.redAccent,
+                                      side: const BorderSide(color: Colors.redAccent, width: 1.5),
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                                    ),
+                                    child: Text("cancel".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: SizedBox(
-                          height: 50,
-                          child: OutlinedButton(
-                            onPressed: () => _showCancelDialog(context, data['company']!, data['date']!),
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.redAccent,
-                              side: const BorderSide(color: Colors.redAccent, width: 1.5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                            ),
-                            child: Text("cancel".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
-                          ),
-                        ),
-                      ),
-                    ],
+                        ],
+                      );
+                    },
                   ),
                 ] else ...[
                   const SizedBox(height: 25),

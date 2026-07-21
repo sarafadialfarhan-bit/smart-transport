@@ -37,10 +37,10 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
         iconTheme: const IconThemeData(color: kWhiteColor),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddCompanyDialog(),
+        onPressed: () => _showAddUserDialog(),
         backgroundColor: kPrimaryColor,
-        icon: const Icon(Icons.add_business, color: kWhiteColor),
-        label: Text("add_company".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold)),
+        icon: const Icon(Icons.person_add, color: kWhiteColor),
+        label: Text("add_user".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold)),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('users').snapshots(),
@@ -139,10 +139,18 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
                           await FirebaseFirestore.instance.collection('users').doc(userId).update({
                             'status': isBlocked ? 'active' : 'blocked'
                           });
+                        } else if (value == 'promote') {
+                          await _userService.updateUserRole(userId, 'supervisor');
+                        } else if (value == 'demote') {
+                          await _userService.updateUserRole(userId, 'user');
                         }
                       },
                       itemBuilder: (context) => [
                         PopupMenuItem(value: 'block', child: Text(isBlocked ? "unblock".tr() : "block".tr())),
+                        if (role == 'user')
+                          PopupMenuItem(value: 'promote', child: Text("promote_to_supervisor".tr())),
+                        if (role == 'supervisor')
+                          PopupMenuItem(value: 'demote', child: Text("demote_to_user".tr())),
                         PopupMenuItem(value: 'delete', child: Text("delete".tr(), style: const TextStyle(color: Colors.red))),
                       ],
                     ),
@@ -156,93 +164,122 @@ class _UserManagementScreenState extends State<UserManagementScreen> {
     );
   }
 
-  void _showAddCompanyDialog() {
+  void _showAddUserDialog() {
     _emailController.clear();
     _passwordController.clear();
     _nameArController.clear();
     _nameEnController.clear();
+    String selectedRole = 'company';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
-      builder: (context) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          top: 30,
-          left: 20,
-          right: 20,
-        ),
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text("add_new_company".tr(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor)),
-                const SizedBox(height: 20),
-                _buildTextField("email".tr(), Icons.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
-                const SizedBox(height: 15),
-                _buildTextField("password".tr(), Icons.lock, controller: _passwordController, isPassword: true),
-                const SizedBox(height: 15),
-                _buildTextField("company_name_ar".tr(), Icons.business, controller: _nameArController),
-                const SizedBox(height: 15),
-                _buildTextField("company_name_en".tr(), Icons.business, controller: _nameEnController),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 55,
-                  child: ElevatedButton(
-                    onPressed: () async {
-                      if (_formKey.currentState!.validate()) {
-                        try {
-                          // إنشاء تطبيق مؤقت لإنشاء المستخدم دون تسجيل خروج الأدمن
-                          FirebaseApp secondaryApp = await Firebase.initializeApp(
-                            name: 'SecondaryApp',
-                            options: Firebase.app().options,
-                          );
-
-                          UserCredential result = await FirebaseAuth.instanceFor(app: secondaryApp)
-                              .createUserWithEmailAndPassword(
-                            email: _emailController.text.trim(),
-                            password: _passwordController.text.trim(),
-                          );
-
-                          await _userService.createCompanyProfile(
-                            result.user!.uid,
-                            email: _emailController.text.trim(),
-                            nameAr: _nameArController.text.trim(),
-                            nameEn: _nameEnController.text.trim(),
-                          );
-
-                          // حذف التطبيق المؤقت
-                          await secondaryApp.delete();
-
-                          if (mounted) {
-                            Navigator.pop(context);
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("company_created_success".tr())),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setModalState) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+            top: 30,
+            left: 20,
+            right: 20,
+          ),
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text("add_new_user".tr(), style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: kSecondaryColor)),
+                  const SizedBox(height: 20),
+                  DropdownButtonFormField<String>(
+                    value: selectedRole,
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.grey.shade100,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+                    ),
+                    items: [
+                      DropdownMenuItem(value: 'company', child: Text("company".tr())),
+                      DropdownMenuItem(value: 'supervisor', child: Text("supervisor".tr())),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) setModalState(() => selectedRole = val);
+                    },
+                  ),
+                  const SizedBox(height: 15),
+                  _buildTextField("email".tr(), Icons.email, controller: _emailController, keyboardType: TextInputType.emailAddress),
+                  const SizedBox(height: 15),
+                  _buildTextField("password".tr(), Icons.lock, controller: _passwordController, isPassword: true),
+                  const SizedBox(height: 15),
+                  if (selectedRole == 'company') ...[
+                    _buildTextField("company_name_ar".tr(), Icons.business, controller: _nameArController),
+                    const SizedBox(height: 15),
+                    _buildTextField("company_name_en".tr(), Icons.business, controller: _nameEnController),
+                  ] else ...[
+                    _buildTextField("full_name".tr(), Icons.person, controller: _nameEnController),
+                  ],
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 55,
+                    child: ElevatedButton(
+                      onPressed: () async {
+                        if (_formKey.currentState!.validate()) {
+                          try {
+                            FirebaseApp secondaryApp = await Firebase.initializeApp(
+                              name: 'SecondaryApp',
+                              options: Firebase.app().options,
                             );
-                          }
-                        } catch (e) {
-                          if (mounted) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text(e.toString())),
+
+                            UserCredential result = await FirebaseAuth.instanceFor(app: secondaryApp)
+                                .createUserWithEmailAndPassword(
+                              email: _emailController.text.trim(),
+                              password: _passwordController.text.trim(),
                             );
+
+                            if (selectedRole == 'company') {
+                              await _userService.createCompanyProfile(
+                                result.user!.uid,
+                                email: _emailController.text.trim(),
+                                nameAr: _nameArController.text.trim(),
+                                nameEn: _nameEnController.text.trim(),
+                              );
+                            } else {
+                              await _userService.createSupervisorProfile(
+                                result.user!.uid,
+                                email: _emailController.text.trim(),
+                                name: _nameEnController.text.trim(),
+                              );
+                            }
+
+                            await secondaryApp.delete();
+
+                            if (mounted) {
+                              Navigator.pop(context);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("user_created_success".tr())),
+                              );
+                            }
+                          } catch (e) {
+                            if (mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text(e.toString())),
+                              );
+                            }
                           }
                         }
-                      }
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: kPrimaryColor,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: kPrimaryColor,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                      ),
+                      child: Text("save".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold, fontSize: 16)),
                     ),
-                    child: Text("save".tr(), style: const TextStyle(color: kWhiteColor, fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
-                ),
-                const SizedBox(height: 30),
-              ],
+                  const SizedBox(height: 30),
+                ],
+              ),
             ),
           ),
         ),

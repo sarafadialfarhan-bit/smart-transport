@@ -10,6 +10,9 @@ class TripService {
   Future<void> addTrip(Map<String, dynamic> tripData) async {
     await _db.collection('trips').add({
       ...tripData,
+      'status': 'active', // active, started, completed, cancelled, postponed
+      'supervisorId': tripData['supervisorId'] ?? '',
+      'supervisorName': tripData['supervisorName'] ?? '',
       'createdAt': FieldValue.serverTimestamp(),
     });
   }
@@ -18,7 +21,18 @@ class TripService {
     await _db.collection('trips').doc(id).update(tripData);
   }
 
+  Future<void> startTrip(String id) async {
+    await _db.collection('trips').doc(id).update({
+      'status': 'started',
+      'startedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> deleteTrip(String id) async {
     await _db.collection('trips').doc(id).delete();
+  }
+
+  Stream<QuerySnapshot> getSupervisors() {
+    return _db.collection('users').where('role', isEqualTo: 'supervisor').snapshots();
   }
 }

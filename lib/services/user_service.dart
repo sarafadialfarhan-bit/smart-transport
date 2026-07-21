@@ -34,6 +34,26 @@ class UserService {
     return await _db.collection('users').doc(uid).get();
   }
 
+  Future<void> createSupervisorProfile(String uid, {
+    required String email,
+    required String name,
+  }) async {
+    await _db.collection('users').doc(uid).set({
+      'uid': uid,
+      'email': email,
+      'name': name,
+      'role': 'supervisor',
+      'status': 'active',
+      'createdAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> updateUserRole(String uid, String newRole) async {
+    await _db.collection('users').doc(uid).update({
+      'role': newRole,
+    });
+  }
+
   Future<String?> getUserRole(String uid) async {
     DocumentSnapshot doc = await _db.collection('users').doc(uid).get();
     if (doc.exists) {
