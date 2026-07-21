@@ -7,7 +7,9 @@ import '../components/custom_text_form_field.dart';
 import '../components/custom_button.dart';
 import '../services/booking_service.dart';
 import '../services/notification_service.dart';
+import '../widgets/seat_map_widget.dart';
 import 'trips_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PassengerDataScreen extends StatefulWidget {
   final Trip trip;
@@ -25,14 +27,13 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
   final TextEditingController _nationalIdController = TextEditingController();
   final BookingService _bookingService = BookingService();
   
-  String? selectedSeatPref;
+  String? selectedSeatNumber;
   String? gender;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    selectedSeatPref = "window";
     gender = "male";
   }
 
@@ -200,13 +201,23 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                     const SizedBox(height: 25),
 
                     _buildSectionTitle("seating_preferences".tr()),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _buildSeatOption("window", Icons.grid_view_rounded),
-                        _buildSeatOption("aisle", Icons.view_column_outlined),
-                        _buildSeatOption("front", Icons.front_hand_outlined),
-                      ],
+                    StreamBuilder<DocumentSnapshot>(
+                      stream: FirebaseFirestore.instance.collection('trips').doc(widget.trip.id).snapshots(),
+                      builder: (context, snapshot) {
+                        if (!snapshot.hasData) return const SizedBox();
+                        final tripData = snapshot.data!.data() as Map<String, dynamic>;
+                        final seats = Map<String, dynamic>.from(tripData['seats'] ?? {});
+                        final busType = tripData['busType'] ?? 'standard';
+
+                        return SeatMapWidget(
+                          seats: seats,
+                          busType: busType,
+                          selectedSeat: selectedSeatNumber,
+                          onSeatSelected: (seat) {
+                            setState(() => selectedSeatNumber = seat);
+                          },
+                        );
+                      },
                     ),
 
                     const SizedBox(height: 40),
@@ -216,6 +227,12 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                       isLoading: _isLoading,
                       onPressed: () async {
                         if (_formKey.currentState!.validate()) {
+                          if (selectedSeatNumber == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("please_select_seat".tr())),
+                            );
+                            return;
+                          }
                           setState(() => _isLoading = true);
                           try {
                             await _bookingService.createBooking(
@@ -225,7 +242,7 @@ class _PassengerDataScreenState extends State<PassengerDataScreen> {
                               mobile: _mobileController.text.trim(),
                               nationalId: _nationalIdController.text.trim(),
                               gender: gender!,
-                              seatPref: selectedSeatPref!,
+                              seatNumber: selectedSeatNumber!,
                             );
                             
                             // Send booking confirmation notification

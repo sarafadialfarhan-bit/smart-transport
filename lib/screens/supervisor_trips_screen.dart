@@ -2,12 +2,66 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:intl/intl.dart';
+import 'dart:async';
 import '../constants.dart';
+import '../services/trip_service.dart';
 import 'trip_chat_screen.dart';
+import 'qr_scanner_screen.dart';
 
-class SupervisorTripsScreen extends StatelessWidget {
+class SupervisorTripsScreen extends StatefulWidget {
   const SupervisorTripsScreen({super.key});
+
+  @override
+  State<SupervisorTripsScreen> createState() => _SupervisorTripsScreenState();
+}
+
+class _SupervisorTripsScreenState extends State<SupervisorTripsScreen> {
+  final TripService _tripService = TripService();
+  final Map<String, Timer?> _locationTimers = {};
+  final Map<String, bool> _isTracking = {};
+
+  @override
+  void dispose() {
+    for (var timer in _locationTimers.values) {
+      timer?.cancel();
+    }
+    super.dispose();
+  }
+
+  void _toggleTracking(String tripId, bool enable) async {
+    if (enable) {
+      try {
+        LocationPermission permission = await Geolocator.checkPermission();
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+
+        if (permission == LocationPermission.always || permission == LocationPermission.whileInUse) {
+          setState(() => _isTracking[tripId] = true);
+          
+          // Initial update
+          Position position = await Geolocator.getCurrentPosition();
+          await _tripService.updateLiveLocation(tripId, position.latitude, position.longitude, true);
+
+          // Periodic update every 30 seconds
+          _locationTimers[tripId] = Timer.periodic(const Duration(seconds: 30), (timer) async {
+            Position pos = await Geolocator.getCurrentPosition();
+            await _tripService.updateLiveLocation(tripId, pos.latitude, pos.longitude, true);
+          });
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+        setState(() => _isTracking[tripId] = false);
+      }
+    } else {
+      _locationTimers[tripId]?.cancel();
+      _locationTimers[tripId] = null;
+      setState(() => _isTracking[tripId] = false);
+      await _tripService.updateLiveLocation(tripId, 0, 0, false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -82,7 +136,36 @@ class SupervisorTripsScreen extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 15),
-                      if (isStarted)
+                      if (isStarted) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text("live_tracking".tr(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                            Switch(
+                              value: _isTracking[tripId] ?? false,
+                              onChanged: (val) => _toggleTracking(tripId, val),
+                              activeColor: kPrimaryColor,
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => QRScannerScreen(tripId: tripId),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.qr_code_scanner),
+                            label: Text("scan_passengers".tr()),
+                            style: ElevatedButton.styleFrom(backgroundColor: kGreenColor, foregroundColor: kWhiteColor),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
                         SizedBox(
                           width: double.infinity,
                           child: ElevatedButton.icon(
@@ -104,6 +187,7 @@ class SupervisorTripsScreen extends StatelessWidget {
                             style: ElevatedButton.styleFrom(backgroundColor: kPrimaryColor, foregroundColor: kWhiteColor),
                           ),
                         ),
+                      ],
                     ],
                   ),
                 ),

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:smart_transport/screens/trip_chat_screen.dart';
 import '../constants.dart';
 import '../services/trip_service.dart';
+import '../services/bus_service.dart';
 import '../services/notification_service.dart';
 import '../components/skeleton.dart';
 
@@ -18,6 +19,7 @@ class ManageTripsScreen extends StatefulWidget {
 
 class _ManageTripsScreenState extends State<ManageTripsScreen> {
   final TripService _tripService = TripService();
+  final BusService _busService = BusService();
   final NotificationService _notificationService = NotificationService();
   final _formKey = GlobalKey<FormState>();
 
@@ -31,6 +33,9 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
   String? _toCity;
   String? _selectedSupervisorId;
   String? _selectedSupervisorName;
+  String? _selectedBusId;
+  String? _selectedBusName;
+  String? _selectedBusType;
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
 
@@ -371,6 +376,9 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
     _toCity = null;
     _selectedSupervisorId = null;
     _selectedSupervisorName = null;
+    _selectedBusId = null;
+    _selectedBusName = null;
+    _selectedBusType = null;
     _selectedDate = DateTime.now();
     _selectedTime = TimeOfDay.now();
 
@@ -387,6 +395,9 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
     _toCity = trip['to'];
     _selectedSupervisorId = trip['supervisorId'];
     _selectedSupervisorName = trip['supervisorName'];
+    _selectedBusId = trip['busId'];
+    _selectedBusName = trip['busName'];
+    _selectedBusType = trip['busType'];
     
     DateTime dt = (trip['dateTime'] as Timestamp).toDate();
     _selectedDate = dt;
@@ -461,6 +472,45 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                     },
                   ),
                   const SizedBox(height: 15),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: _busService.getCompanyBuses(widget.companyId ?? ''),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      final buses = snapshot.data!.docs;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedBusId,
+                            hint: Text("select_bus".tr()),
+                            isExpanded: true,
+                            items: buses.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              return DropdownMenuItem(
+                                value: doc.id,
+                                child: Text("${data['name']} (${data['totalSeats']} ${"seats".tr()})"),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              final bus = buses.firstWhere((doc) => doc.id == val);
+                              final data = bus.data() as Map<String, dynamic>;
+                              setModalState(() {
+                                _selectedBusId = val;
+                                _selectedBusName = data['name'];
+                                _selectedBusType = data['type'];
+                                _totalSeatsController.text = data['totalSeats'].toString();
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 15),
                   Row(
                     children: [
                       Expanded(
@@ -471,6 +521,45 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                         child: _buildCityDropdown("to".tr(), _toCity, (val) => setModalState(() => _toCity = val)),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 15),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: _busService.getCompanyBuses(widget.companyId ?? ''),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      final buses = snapshot.data!.docs;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedBusId,
+                            hint: Text("select_bus".tr()),
+                            isExpanded: true,
+                            items: buses.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              return DropdownMenuItem(
+                                value: doc.id,
+                                child: Text("${data['name']} (${data['totalSeats']} ${"seats".tr()})"),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              final bus = buses.firstWhere((doc) => doc.id == val);
+                              final data = bus.data() as Map<String, dynamic>;
+                              setModalState(() {
+                                _selectedBusId = val;
+                                _selectedBusName = data['name'];
+                                _selectedBusType = data['type'];
+                                _totalSeatsController.text = data['totalSeats'].toString();
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 15),
                   Row(
@@ -503,6 +592,45 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 15),
+                  StreamBuilder<QuerySnapshot>(
+                    stream: _busService.getCompanyBuses(widget.companyId ?? ''),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) return const SizedBox();
+                      final buses = snapshot.data!.docs;
+                      return Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedBusId,
+                            hint: Text("select_bus".tr()),
+                            isExpanded: true,
+                            items: buses.map((doc) {
+                              final data = doc.data() as Map<String, dynamic>;
+                              return DropdownMenuItem(
+                                value: doc.id,
+                                child: Text("${data['name']} (${data['totalSeats']} ${"seats".tr()})"),
+                              );
+                            }).toList(),
+                            onChanged: (val) {
+                              final bus = buses.firstWhere((doc) => doc.id == val);
+                              final data = bus.data() as Map<String, dynamic>;
+                              setModalState(() {
+                                _selectedBusId = val;
+                                _selectedBusName = data['name'];
+                                _selectedBusType = data['type'];
+                                _totalSeatsController.text = data['totalSeats'].toString();
+                              });
+                            },
+                          ),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 15),
                   Row(
@@ -542,15 +670,26 @@ class _ManageTripsScreenState extends State<ManageTripsScreen> {
                             'duration': double.tryParse(_durationController.text) ?? 4.0,
                             'supervisorId': _selectedSupervisorId,
                             'supervisorName': _selectedSupervisorName,
+                            'busId': _selectedBusId,
+                            'busName': _selectedBusName,
+                            'busType': _selectedBusType,
                           };
 
                           if (isEdit && tripId != null) {
                             await _tripService.updateTrip(tripId, tripData);
                           } else {
+                            // Initialize seats map
+                            Map<String, String> seats = {};
+                            int seatsCount = int.parse(_totalSeatsController.text);
+                            for (int i = 1; i <= seatsCount; i++) {
+                              seats[i.toString()] = "available";
+                            }
+
                             await _tripService.addTrip({
                               ...tripData,
                               'bookedSeats': 0,
                               'status': 'active',
+                              'seats': seats,
                             });
                           }
                           

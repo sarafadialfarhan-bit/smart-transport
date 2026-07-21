@@ -28,6 +28,15 @@ class TripService {
     });
   }
 
+  Future<void> updateLiveLocation(String id, double lat, double lng, bool isLive) async {
+    await _db.collection('trips').doc(id).update({
+      'currentLat': lat,
+      'currentLng': lng,
+      'isLive': isLive,
+      'lastLocationUpdate': FieldValue.serverTimestamp(),
+    });
+  }
+
   Future<void> deleteTrip(String id) async {
     await _db.collection('trips').doc(id).delete();
   }

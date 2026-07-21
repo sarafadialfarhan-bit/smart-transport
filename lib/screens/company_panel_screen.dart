@@ -6,6 +6,8 @@ import 'package:smart_transport/screens/user_management_screen.dart';
 import '../constants.dart';
 import 'manage_trips_screen.dart';
 import 'financial_reports_screen.dart';
+import 'fleet_management_screen.dart';
+import 'user_management_screen.dart';
 
 class CompanyPanelScreen extends StatefulWidget {
   const CompanyPanelScreen({super.key});
@@ -105,6 +107,22 @@ class _CompanyPanelScreenState extends State<CompanyPanelScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(builder: (context) => UserManagementScreen(companyId: user.uid)),
+                  );
+                }
+              },
+            ),
+            _buildOption(
+              context,
+              title: "fleet_management".tr(),
+              subtitle: "fleet_management_desc".tr(),
+              icon: Icons.directions_bus_filled_rounded,
+              color: Colors.orange,
+              onTap: () {
+                final user = FirebaseAuth.instance.currentUser;
+                if (user != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => FleetManagementScreen(companyId: user.uid)),
                   );
                 }
               },

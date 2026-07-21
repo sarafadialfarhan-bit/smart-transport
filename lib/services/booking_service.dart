@@ -12,27 +12,33 @@ class BookingService {
     required String mobile,
     required String nationalId,
     required String gender,
-    required String seatPref,
+    required String seatNumber,
   }) async {
     final bookingRef = _db.collection('bookings').doc();
 
     await _db.runTransaction((transaction) async {
-      final tripDoc = await transaction.get(_db.collection('trips').doc(trip.id));
+      final tripRef = _db.collection('trips').doc(trip.id);
+      final tripDoc = await transaction.get(tripRef);
       if (!tripDoc.exists) throw "Trip does not exist";
 
-      String status = tripDoc.data()?['status'] ?? 'active';
+      Map<String, dynamic> tripData = tripDoc.data() as Map<String, dynamic>;
+      String status = tripData['status'] ?? 'active';
       if (status != 'active') throw "trip_no_longer_available".tr();
 
-      int currentBooked = tripDoc.data()?['bookedSeats'] ?? 0;
-      int totalSeats = tripDoc.data()?['totalSeats'] ?? 1;
+      Map<String, dynamic> seats = Map<String, dynamic>.from(tripData['seats'] ?? {});
+      if (seats[seatNumber] != 'available') throw "seat_already_booked".tr();
 
-      if (currentBooked >= totalSeats) throw "Trip is full";
-
-      transaction.update(_db.collection('trips').doc(trip.id), {
+      int currentBooked = tripData['bookedSeats'] ?? 0;
+      
+      // Update seats map and booked count
+      seats[seatNumber] = "occupied";
+      transaction.update(tripRef, {
         'bookedSeats': currentBooked + 1,
+        'seats': seats,
       });
 
       transaction.set(bookingRef, {
+        'id': bookingRef.id,
         'userId': uid,
         'tripId': trip.id,
         'company': trip.company,
@@ -43,7 +49,7 @@ class BookingService {
         'mobile': mobile,
         'nationalId': nationalId,
         'gender': gender,
-        'seatPref': seatPref,
+        'seat': seatNumber,
         'totalPrice': trip.price,
         'status': 'confirmed',
         'createdAt': FieldValue.serverTimestamp(),
@@ -57,5 +63,32 @@ class BookingService {
         .where('userId', isEqualTo: uid)
         .orderBy('createdAt', descending: true)
         .snapshots();
+  }
+
+  Future<void> markAsBoarded(String bookingId) async {
+    await _db.runTransaction((transaction) async {
+      final bookingRef = _db.collection('bookings').doc(bookingId);
+      final bookingDoc = await transaction.get(bookingRef);
+      if (!bookingDoc.exists) return;
+
+      final data = bookingDoc.data() as Map<String, dynamic>;
+      final String tripId = data['tripId'];
+      final String seatNum = data['seat'];
+
+      // Update booking status
+      transaction.update(bookingRef, {
+        'status': 'boarded',
+        'boardedAt': FieldValue.serverTimestamp(),
+      });
+
+      // Update trip seat status
+      final tripRef = _db.collection('trips').doc(tripId);
+      final tripDoc = await transaction.get(tripRef);
+      if (tripDoc.exists) {
+        Map<String, dynamic> seats = Map<String, dynamic>.from(tripDoc.data()?['seats'] ?? {});
+        seats[seatNum] = "boarded";
+        transaction.update(tripRef, {'seats': seats});
+      }
+    });
   }
 }

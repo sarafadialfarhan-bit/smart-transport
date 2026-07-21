@@ -1,3 +1,4 @@
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -5,15 +6,22 @@ import 'package:intl/intl.dart';
 import '../constants.dart';
 import '../components/skeleton.dart';
 
-class FinancialReportsScreen extends StatelessWidget {
+class FinancialReportsScreen extends StatefulWidget {
   final String? companyName;
   const FinancialReportsScreen({super.key, this.companyName});
 
   @override
+  State<FinancialReportsScreen> createState() => _FinancialReportsScreenState();
+}
+
+class _FinancialReportsScreenState extends State<FinancialReportsScreen> {
+  bool _isWeekly = true;
+
+  @override
   Widget build(BuildContext context) {
     Query bookingsQuery = FirebaseFirestore.instance.collection('bookings').orderBy('createdAt', descending: true);
-    if (companyName != null) {
-      bookingsQuery = bookingsQuery.where('company', isEqualTo: companyName);
+    if (widget.companyName != null) {
+      bookingsQuery = bookingsQuery.where('company', isEqualTo: widget.companyName);
     }
 
     return Scaffold(
@@ -49,6 +57,8 @@ class FinancialReportsScreen extends StatelessWidget {
           DateTime weekAgo = now.subtract(const Duration(days: 7));
           DateTime monthAgo = DateTime(now.year, now.month - 1, now.day);
 
+          Map<String, double> chartData = {};
+
           for (var doc in bookings) {
             final data = doc.data() as Map<String, dynamic>;
             double price = (data['totalPrice'] ?? 0).toDouble();
@@ -60,6 +70,14 @@ class FinancialReportsScreen extends StatelessWidget {
               if (date.isAfter(today)) dailyRevenue += price;
               if (date.isAfter(weekAgo)) weeklyRevenue += price;
               if (date.isAfter(monthAgo)) monthlyRevenue += price;
+
+              String key;
+              if (_isWeekly) {
+                key = DateFormat('MM/dd').format(date);
+              } else {
+                key = DateFormat('MMM').format(date);
+              }
+              chartData[key] = (chartData[key] ?? 0) + price;
             }
           }
 
@@ -69,6 +87,8 @@ class FinancialReportsScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildSummaryCard(totalEarnings),
+                const SizedBox(height: 30),
+                _buildChartSection(chartData),
                 const SizedBox(height: 30),
                 Text(
                   "revenue_details".tr(),
@@ -106,10 +126,140 @@ class FinancialReportsScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildChartSection(Map<String, double> chartData) {
+    List<String> keys = chartData.keys.toList().reversed.toList();
+    if (keys.length > (_isWeekly ? 7 : 6)) {
+      keys = keys.sublist(keys.length - (_isWeekly ? 7 : 6));
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: kWhiteColor,
+        borderRadius: BorderRadius.circular(25),
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 5))
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                _isWeekly ? "weekly_stats".tr() : "monthly_stats".tr(),
+                style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: kSecondaryColor),
+              ),
+              Container(
+                decoration: BoxDecoration(
+                  color: kBackgroundColor,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    _buildToggleButton("W", _isWeekly, () => setState(() => _isWeekly = true)),
+                    _buildToggleButton("M", !_isWeekly, () => setState(() => _isWeekly = false)),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 30),
+          SizedBox(
+            height: 200,
+            child: LineChart(
+              LineChartData(
+                gridData: FlGridData(show: false),
+                titlesData: FlTitlesData(
+                  leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        int index = value.toInt();
+                        if (index >= 0 && index < keys.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(keys[index], style: const TextStyle(fontSize: 10, color: kGreyColor)),
+                          );
+                        }
+                        return const SizedBox();
+                      },
+                    ),
+                  ),
+                ),
+                borderData: FlBorderData(show: false),
+                lineBarsData: [
+                  LineChartBarData(
+                    isCurved: true,
+                    color: kPrimaryColor,
+                    barWidth: 4,
+                    isStrokeCapRound: true,
+                    dotData: FlDotData(show: true),
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: kPrimaryColor.withOpacity(0.1),
+                    ),
+                    spots: List.generate(keys.length, (index) {
+                      return FlSpot(index.toDouble(), chartData[keys[index]]! / 1000);
+                    }),
+                  ),
+                ],
+                lineTouchData: LineTouchData(
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (spot) => kSecondaryColor,
+                    getTooltipItems: (spots) {
+                      return spots.map((spot) {
+                        return LineTooltipItem(
+                          "${spot.y.toStringAsFixed(0)}K ${"currency".tr()}",
+                          const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          Center(
+            child: Text(
+              "amounts_in_thousands".tr(),
+              style: const TextStyle(fontSize: 10, color: kGreyColor, fontStyle: FontStyle.italic),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleButton(String label, bool active, VoidCallback onTap) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+        decoration: BoxDecoration(
+          color: active ? kPrimaryColor : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: active ? Colors.white : kGreyColor,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildSummaryCard(double totalEarnings) {
     Query tripsQuery = FirebaseFirestore.instance.collection('trips');
-    if (companyName != null) {
-      tripsQuery = tripsQuery.where('company', isEqualTo: companyName);
+    if (widget.companyName != null) {
+      tripsQuery = tripsQuery.where('company', isEqualTo: widget.companyName);
     }
 
     return StreamBuilder<QuerySnapshot>(
@@ -151,7 +301,7 @@ class FinancialReportsScreen extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
                       _buildSimpleStat("trips".tr(), totalTrips.toString()),
-                      if (companyName == null) ...[
+                      if (widget.companyName == null) ...[
                         Container(width: 1, height: 30, color: Colors.white24),
                         _buildSimpleStat("users".tr(), totalUsers.toString()),
                       ],
